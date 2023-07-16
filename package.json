@@ -1,0 +1,46 @@
+{
+  "name": "@roots/clover",
+  "version": "0.0.1",
+  "license": "MIT",
+  "private": true,
+  "description": "Clover",
+  "homepage": "https://roots.io/",
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "http://opensource.org/licenses/MIT"
+    }
+  ],
+  "authors": [
+    {
+      "name": "Roots",
+      "email": "team@roots.io"
+    }
+  ],
+  "type": "module",
+  "scripts": {
+    "build": "bud build",
+    "dev": "watch-run -p 'src/client/**/*' 'bud build'"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.26.0",
+    "@roots/bud": "6.13.1",
+    "@roots/bud-babel": "6.13.1",
+    "@roots/bud-postcss": "6.13.1",
+    "@roots/bud-react": "6.13.1",
+    "@roots/bud-tailwindcss": "6.13.1",
+    "@roots/bud-wordpress-manifests": "6.13.1",
+    "daisyui": "^3.2.1",
+    "npm": "^9.8.0"
+  },
+  "dependencies": {
+    "@headlessui/react": "^1.7.15",
+    "@heroicons/react": "^2.0.18",
+    "classnames": "^2.3.2",
+    "react-router-dom": "^6.14.1",
+    "sweetalert2": "^11.7.12"
+  },
+  "browserslist": [
+    "extends @roots/browserslist-config"
+  ]
+}
