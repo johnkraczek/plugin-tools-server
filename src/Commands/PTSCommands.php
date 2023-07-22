@@ -11,7 +11,7 @@ class PTSCommands extends \WP_CLI_Command
         parent::__construct();
     }
 
-    public function fetchRepos()
+    public function fetchAll()
     {
         $wpUploadsDir = wp_upload_dir()['basedir'];
         $targetDir = $wpUploadsDir . '/plugin-tools-server';
