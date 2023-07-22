@@ -1,13 +1,14 @@
 <?php
 
-namespace PluginToolsServer\Providers;
+namespace PluginToolsServer\Providers\Rest;
+use PluginToolsServer\Providers\Provider;
 
 class ApiServiceProvider implements Provider
 {
     public function register()
     {
         add_action('rest_api_init', function () {
-            register_rest_route('plugin-name/v1', '/howdy', [
+            register_rest_route('pt-server/v1', '/howdy', [
                 'methods' => 'GET',
                 'callback' => function () {
                     return [

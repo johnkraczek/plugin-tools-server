@@ -29,8 +29,16 @@
       "PluginTools\\Tests\\": "tests/"
     }
   },
+  "repositories": [
+    {
+      "type": "vcs",
+      "url": "https://github.com/bit3/git-php.git"
+    }
+  ],
   "require": {
-    "php": "^8.0"
+    "php": "^8.0",
+    "phpseclib/phpseclib": "^3.0",
+    "symfony/process": "^6.3"
   },
   "scripts": {
     "lint": "pint",

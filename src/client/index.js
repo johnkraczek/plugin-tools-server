@@ -13,10 +13,9 @@ import App from './App';
  * with the wp_localize_script in the AdminPageProvider.php file.
 */
 
-const container = document.querySelector('#ydtb-plugin-tools-root');
+const container = document.querySelector('#ydtb-plugin-tools-server-root');
 const shadowContainer = container.attachShadow({ mode: 'open' });
 const shadowRootElement = document.createElement('div');
-
 const shadowStyleElement = document.createElement('link');
 shadowStyleElement.rel = 'stylesheet';
 shadowStyleElement.type = 'text/css';

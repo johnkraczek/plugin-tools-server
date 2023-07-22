@@ -18,10 +18,10 @@
 
 require_once __DIR__.'/vendor/autoload.php';
 
-define("YDTB_PTOOLS_URL", plugin_dir_url(__FILE__));
-define("YDTB_PTOOLS_PATH", plugin_dir_path(__FILE__));
+define("YDTB_PTOOLS_SERVER_URL", plugin_dir_url(__FILE__));
+define("YDTB_PTOOLS_SERVER_PATH", plugin_dir_path(__FILE__));
 
-$YDTBServerPlugin = new \PluginTools\Plugin;
+$YDTBServerPlugin = new \PluginToolsServer\Plugin;
 $YDTBServerPlugin->register();
 
 add_action('init', [$YDTBServerPlugin, 'boot']);

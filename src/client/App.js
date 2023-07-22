@@ -10,8 +10,6 @@ import Settings from './pages/settings';
 
 const navigation = [
   { name: 'Dashboard', href: '#/'},
-  { name: 'Whitelist', href: '#/whitelist'},
-  { name: 'Store', href: '#/store'},
   { name: 'Settings', href: '#/settings'}
 ]
 
@@ -22,8 +20,6 @@ const App = () => {
       <Header nav={navigation} />
       <Routes>
         <Route path="/" element={<Dashboard />} />
-        <Route path="/whitelist" element={<Whitelist />} />
-        <Route path="/store" element={<Store />} />
         <Route path="/settings" element={<Settings />} />
       </Routes>
     </div>

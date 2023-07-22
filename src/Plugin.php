@@ -2,9 +2,9 @@
 
 namespace PluginToolsServer;
 use \PluginToolsServer\Providers\Provider;
-use \PluginToolsServer\Providers\ApiServiceProvider;
-use \PluginToolsServer\Providers\AdminPageProvider;
-use \PluginToolsServer\Providers\CommandServiceProvider;
+use \PluginToolsServer\Providers\Rest\ApiServiceProvider;
+use \PluginToolsServer\Providers\Views\AdminPageProvider;
+use \PluginToolsServer\Providers\Commands\CommandServiceProvider;
 
 class Plugin implements Provider
 { 
