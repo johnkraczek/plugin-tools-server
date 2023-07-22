@@ -3,22 +3,18 @@ import { useTitle } from "../../contexts/titleContext"
 import Box from '../../components/box';
 import {
     CloudArrowUpIcon,
-    LockClosedIcon,
-    ServerIcon,
     ArchiveBoxArrowDownIcon,
     ClipboardDocumentListIcon,
     ArrowPathIcon,
     CloudArrowDownIcon
 } from '@heroicons/react/20/solid'
 
-
-
 const Dashboard = () => {
 
     const { setTitle } = useTitle();
 
     useEffect(() => {
-        setTitle("YDTB Plugin Tools");
+        setTitle("YDTB Plugin Tools Server");
     }, [])
 
     return (
