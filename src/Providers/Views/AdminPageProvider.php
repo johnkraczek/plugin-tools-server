@@ -47,8 +47,8 @@ class AdminPageProvider implements Provider
             );
         }
 
-        wp_localize_script('js/client.js', 'ydtb', [
-            'rest' => esc_url_raw(rest_url())."/ydtb-plugin-tools/v1/",
+        wp_localize_script('js/client.js', 'pts', [
+            'rest' => esc_url_raw(rest_url())."pt-server/v1/",
             'nonce' => wp_create_nonce('wp_rest'),
             'root' => esc_url_raw(YDTB_PTOOLS_SERVER_URL)
         ]);

@@ -1,12 +1,17 @@
 
 export const reducer = (state, action) => {
     switch (action.type) {
-        case "WEBHOOK-URL":
-            return {...state, webhook_url: action.value};
-        case "WEBHOOK-AUTH":
-            return {...state, webhook_auth: action.value};
+        case "USERNAME":
+            return {...state, bitbucket_username: action.value};
+        case "PASSWORD":
+            if (state.hasOwnProperty('password_blurred') && !state.password_blurred){
+                return {...state, bitbucket_password: action.value.slice(-1), password_blurred: true};
+            }
+            return {...state, bitbucket_password: action.value};
+        case "WORKSPACE":
+            return {...state, bitbucket_workspace: action.value};
         case "INITIALIZE":
-            return action.value;
+            return {...state, ...action.value}
         default:
             return state;
     }
@@ -14,6 +19,8 @@ export const reducer = (state, action) => {
 
 export const initialFormData =
 {
-    webhook_url: "",
-    webhook_auth: ""
+    bitbucket_username: "",
+    bitbucket_password: "",
+    password_blurred: false,
+    bitbucket_workspace: ""
 }

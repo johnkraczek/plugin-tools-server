@@ -1,8 +1,6 @@
 <?php
 
 namespace PluginToolsServer\Services;
-
-// use PluginToolsServer\Services\GitManager;
 use Symfony\Component\Process\Process;
 
 class BitbucketManager
