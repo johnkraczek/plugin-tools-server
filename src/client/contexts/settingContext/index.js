@@ -4,10 +4,11 @@ import axios from "axios";
 import { reducer, initialFormData } from "./reducer";
 
 const axiosOptions = {
-    headers: { 'X-WP-Nonce': ydtb.nonce }
+    headers: { 'X-WP-Nonce': pts.nonce }
 };
+const SettingsFormEndpoint = pts.rest + 'settings';
 
-const SettingsFormEndpoint = ydtb.root + '/settings';
+console.log(SettingsFormEndpoint);
 
 const SettingsContext = createContext();
 export const useSettingsContext = () => useContext(SettingsContext);
@@ -23,6 +24,7 @@ const SettingsProvider = ({ children }) => {
                 if (res.status == 200 && res.data) {
                     dispatch({ type: "INITIALIZE", value: res.data })
                 }
+                console.log('get', res);
             })
             .catch(err => {
                 console.log(err)
@@ -30,8 +32,17 @@ const SettingsProvider = ({ children }) => {
     }, []);
 
     const saveSelection = () => {
+
         setSaving(true);
-        axios.post(SettingsFormEndpoint, formData, axiosOptions)
+
+        let postData = { ...(formData.password_blurred && {bitbucket_password: formData.bitbucket_password}),
+            bitbucket_username: formData.bitbucket_username,
+            bitbucket_workspace: formData.bitbucket_workspace
+         };
+
+        console.log('data to save:', postData)
+
+        axios.post(SettingsFormEndpoint, postData, axiosOptions)
             .then(res => {
                  console.log('save', res);
             })
@@ -41,7 +52,7 @@ const SettingsProvider = ({ children }) => {
             .finally(() => {
                 setTimeout(() => {
                     setSaving(false)
-                }, 250);
+                }, 1000);
             })
     }
 

@@ -6,9 +6,9 @@ import TitleProvider from "./titleContext";
 const Context = ({ children }) => {
     return (
         <TitleProvider>
-            {/* <SettingsProvider> */}
+            <SettingsProvider>
             {children}
-            {/* </SettingsProvider> */}
+            </SettingsProvider>
         </TitleProvider>
     )
 }
