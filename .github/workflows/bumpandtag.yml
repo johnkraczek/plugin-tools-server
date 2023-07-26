@@ -15,14 +15,22 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.1'
           tools: composer:v2
+
+      - name: Do Git Things
+        continue-on-error: true
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git fetch
+          git switch -C builds
+          git pull origin builds
 
       - name: Install PHP Dependencies
         run: composer install --prefer-dist --no-progress
@@ -38,25 +46,11 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Checkout Set Git Action User
+      - name: Do Git Things
         run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-
-      - name: Check if builds branch exists
-        continue-on-error: true
-        run: |
-            git ls-remote --exit-code --heads origin builds
-            if [[ $? -eq 0 ]]
-            then
-                echo "Builds branch exists"
-                git fetch
-                git switch -c builds
-                git pull origin builds
-            else
-                echo "Builds branch does not exist"
-                git checkout -B builds
-            fi
+          git add --force . 
+          git commit -m "Built plugin version"
+          git push -u origin builds
 
       - name: Bump version and Create a Git Tag
         id: tag_version
@@ -65,16 +59,4 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           default_bump: patch
           filter_branches: builds
-      
-      - name: Commit changes
-        run: |
-          git add --force . 
-          git commit -m "Built plugin version ${{ steps.tag_version.outputs.new_version }}"
-
-      - name: Push changes
-        uses: ad-m/github-push-action@master
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          branch: builds
-
 
