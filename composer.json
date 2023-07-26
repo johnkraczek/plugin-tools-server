@@ -1,14 +1,14 @@
 {
-  "name": "roots/clover",
+  "name": "ydtb/plugin-tools-server",
   "type": "wordpress-plugin",
-  "license": "MIT",
-  "description": "WordPress starter plugin",
-  "homepage": "https://roots.io/",
+  "license": "GPLv2",
+  "description": "Plugin Tools Server allows you to track paid wordpress plugins and themes automatically in a git repository. ",
+  "homepage": "https://yourdigitaltoolbox.com/",
   "authors": [
     {
-      "name": "Roots",
-      "email": "team@roots.io",
-      "homepage": "https://github.com/roots"
+      "name": "John Kraczek",
+      "email": "info@yourdigitaltoolbox.com",
+      "homepage": "https://github.com/johnkraczek"
     }
   ],
   "keywords": [
