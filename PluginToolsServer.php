@@ -7,7 +7,7 @@
  * Author:          Roots
  * Author URI:      https://roots.io/
  * License:         MIT License
- * Text Domain:     clover
+ * Text Domain:     ydtb-plugin-tools-server
  * Domain Path:     /resources/lang
  */
 
