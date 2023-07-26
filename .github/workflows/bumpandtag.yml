@@ -46,16 +46,17 @@ jobs:
       - name: Check if builds branch exists
         continue-on-error: true
         run: |
-          git ls-remote --exit-code --heads origin builds
-          if [[ $? -eq 0 ]]
-          then
-              echo "Builds branch exists"
-              git checkout -b builds origin/builds
-              git pull origin builds
-          else
-              echo "Builds branch does not exist"
-              git checkout -B builds
-          fi
+            git ls-remote --exit-code --heads origin builds
+            if [[ $? -eq 0 ]]
+            then
+                echo "Builds branch exists"
+                git fetch
+                git switch -c builds
+                git pull origin builds
+            else
+                echo "Builds branch does not exist"
+                git checkout -B builds
+            fi
 
       - name: Bump version and Create a Git Tag
         id: tag_version
