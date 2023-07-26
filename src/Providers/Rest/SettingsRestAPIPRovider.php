@@ -49,13 +49,9 @@ class SettingsRestAPIPRovider implements Provider
 
     public function post_settings_update(\WP_REST_Request $request)
     {
-
-        // "{"bitbucket_password":"abc123","bitbucket_username":"johnkraczek","bitbucket_workspace":"ydtb-wp-packages"}"
         
         if ($request->is_json_content_type()) {
             $data = $request->get_json_params();
-
-            file_put_contents(YDTB_PTOOLS_SERVER_PATH."/test_log2.txt", json_encode($data), FILE_APPEND);
 
             $updated_options = array();
 
@@ -68,8 +64,6 @@ class SettingsRestAPIPRovider implements Provider
 
             $updated_options['bitbucket_username']= filter_var($data['bitbucket_username'], FILTER_SANITIZE_STRING);
             $updated_options['bitbucket_workspace']= filter_var($data['bitbucket_workspace'], FILTER_SANITIZE_STRING);
-
-            file_put_contents(YDTB_PTOOLS_SERVER_PATH."/test_log.txt", json_encode($updated_options), FILE_APPEND);
 
             update_option(YDTB_PTOOLS_OPTIONS_SLUG, $updated_options);
 
