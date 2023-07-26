@@ -56,6 +56,12 @@ jobs:
           git add --force . 
           git commit -m "Built plugin version ${{ steps.tag_version.outputs.new_tag }}"
 
+      - name: Push changes
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: builds
+
       - name: Generate release description
         id: generate_description
         run: echo "::set-output name=body::$(git log $(git describe --tags --abbrev=0)..HEAD --oneline)"
