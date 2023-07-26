@@ -6,10 +6,11 @@ on:
     branches:
       - master
 
+permissions:
+  contents: write
+
 jobs:
   build:
-    permissions:
-      contents: write
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
 
@@ -44,13 +45,22 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           default_bump: patch
 
+      - name: Generate release description
+        id: generate_description
+        run: echo "::set-output name=body::$(git log $(git describe --tags --abbrev=0)..HEAD --oneline)"
+      
       - name: Create GitHub Release
-        uses: actions/create-release@v1
+        id: create_release
+        uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ steps.tag_version.outputs.new_tag }}
-          release_name: Release ${{ steps.tag_version.outputs.new_tag }}
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-
+          name: Release ${{ steps.tag_version.outputs.new_tag }}
+          body: ${{ steps.generate_description.outputs.body }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        
       # If your plugin need to be zipped
       - name: Zip the plugin
         run: zip -r PluginToolsServer.zip .
