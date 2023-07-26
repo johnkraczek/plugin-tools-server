@@ -46,13 +46,14 @@ jobs:
       - name: Check if builds branch exists
         run: |
           git ls-remote --exit-code --heads origin builds
-          if [ $? -eq 0 ]; then
-            echo "Builds branch exists"
-            git checkout -b builds origin/builds
-            git pull origin builds
+          if [[ $? -eq 0 ]]
+          then
+              echo "Builds branch exists"
+              git checkout -b builds origin/builds
+              git pull origin builds
           else
-            echo "Builds branch does not exist"
-            git checkout -b builds
+              echo "Builds branch does not exist"
+              git checkout -B builds
           fi
       
       - name: Commit changes
