@@ -38,11 +38,22 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Checkout to builds branch
+      - name: Checkout Set Git Action User
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git checkout -B builds
+
+      - name: Check if builds branch exists
+        run: |
+          git ls-remote --exit-code --heads origin builds
+          if [ $? -eq 0 ]; then
+            echo "Builds branch exists"
+            git checkout builds
+            git pull origin builds
+          else
+            echo "Builds branch does not exist"
+            git checkout -b builds
+          fi
       
       - name: Commit changes
         run: |
