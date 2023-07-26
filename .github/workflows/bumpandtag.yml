@@ -49,6 +49,10 @@ jobs:
         id: generate_description
         run: echo "::set-output name=body::$(git log $(git describe --tags --abbrev=0)..HEAD --oneline)"
       
+      # If your plugin need to be zipped
+      - name: Zip the plugin
+        run: zip -r plugin-tools-server.zip .
+
       - name: Create GitHub Release
         id: create_release
         uses: softprops/action-gh-release@v1
@@ -58,17 +62,8 @@ jobs:
           body: ${{ steps.generate_description.outputs.body }}
           draft: false
           prerelease: false
+          files: |
+            plugin-tools-server.zip
+          
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        
-      # If your plugin need to be zipped
-      - name: Zip the plugin
-        run: zip -r plugin-tools-server.zip .
-    
-      - name: Upload Release Asset
-        uses: actions/upload-release-asset@v1
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }} 
-          asset_path: ./plugin-tools-server.zip
-          asset_name: plugin-tools-server.zip
-          asset_content_type: application/zip
