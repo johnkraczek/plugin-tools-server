@@ -4,8 +4,57 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "da78e686b5fc8a7480296f09cc30b955",
+    "content-hash": "64b6ace865c65555ddc70986c3175030",
     "packages": [
+        {
+            "name": "bit3/git-php",
+            "version": "dev-release/1.6.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/bit3/git-php.git",
+                "reference": "a19e7ba4c1ea388ef064cb8d97455c4940fa801d"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/bit3/git-php/zipball/a19e7ba4c1ea388ef064cb8d97455c4940fa801d",
+                "reference": "a19e7ba4c1ea388ef064cb8d97455c4940fa801d",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^7.4 || ^8.0",
+                "psr/log": "^1.0 || ^2.0 || ^3.0",
+                "symfony/process": "^4.0 || ^5.0 || ^6.0"
+            },
+            "require-dev": {
+                "phpcq/runner-bootstrap": "^1.0@dev",
+                "symfony/filesystem": "^4.0 || ^5.0 || ^6.0"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-release/1.6.0": "1.6.0-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Bit3\\GitPhp\\": "src"
+                }
+            },
+            "autoload-dev": {
+                "psr-4": {
+                    "Bit3\\GitPhp\\Test\\": "tests"
+                }
+            },
+            "license": [
+                "MIT"
+            ],
+            "description": "Easy to use GIT wrapper for PHP.",
+            "support": {
+                "source": "https://github.com/bit3/git-php/tree/release/1.6.0",
+                "issues": "https://github.com/bit3/git-php/issues"
+            },
+            "time": "2022-12-28T10:32:26+00:00"
+        },
         {
             "name": "paragonie/constant_time_encoding",
             "version": "v2.6.3",
@@ -234,6 +283,56 @@
             "time": "2023-07-09T15:24:48+00:00"
         },
         {
+            "name": "psr/log",
+            "version": "3.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/php-fig/log.git",
+                "reference": "fe5ea303b0887d5caefd3d431c3e61ad47037001"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/php-fig/log/zipball/fe5ea303b0887d5caefd3d431c3e61ad47037001",
+                "reference": "fe5ea303b0887d5caefd3d431c3e61ad47037001",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=8.0.0"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "3.x-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Psr\\Log\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "PHP-FIG",
+                    "homepage": "https://www.php-fig.org/"
+                }
+            ],
+            "description": "Common interface for logging libraries",
+            "homepage": "https://github.com/php-fig/log",
+            "keywords": [
+                "log",
+                "psr",
+                "psr-3"
+            ],
+            "support": {
+                "source": "https://github.com/php-fig/log/tree/3.0.0"
+            },
+            "time": "2021-07-14T16:46:02+00:00"
+        },
+        {
             "name": "symfony/process",
             "version": "v6.3.0",
             "source": {
@@ -365,7 +464,9 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": [],
+    "stability-flags": {
+        "bit3/git-php": 20
+    },
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {

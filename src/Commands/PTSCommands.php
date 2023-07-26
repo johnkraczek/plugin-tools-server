@@ -14,18 +14,18 @@ class PTSCommands extends \WP_CLI_Command
         $wpUploadsDir = wp_upload_dir()['basedir'];
         $this->targetDir = $wpUploadsDir . '/plugin-tools-server';
         $this->settings = get_option(YDTB_PTOOLS_OPTIONS_SLUG);
-    }
 
-    public function fetchAll()
-    {
-
-        $bitbucketManager = new BitbucketManager(
+        $this->bitbucketManager = new BitbucketManager(
             $this->settings['bitbucket_username'],
             Crypto::Decrypt($this->settings['bitbucket_password']),
             $this->settings['bitbucket_workspace'],
             $this->targetDir
         );
-        $bitbucketManager->cloneOrFetchRepositories();
+    }
+
+    public function fetchAll()
+    {
+        $this->bitbucketManager->cloneOrFetchRepositories();
     }
 
     public function getOptions()
@@ -41,5 +41,13 @@ class PTSCommands extends \WP_CLI_Command
     public function removeRepos(){
         \WP_CLI::confirm( "Are you sure you want to remove the repos?" );
         RimRaf::rrmdir($this->targetDir);
+    }
+
+    public function generateComposer(){
+
+        $packages = $this->bitbucketManager->cloneOrFetchRepositories();
+        $this->bitbucketManager->generateComposerPackages($packages);
+        
+
     }
 }
