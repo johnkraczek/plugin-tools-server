@@ -1,8 +1,5 @@
-name: Build and Release
-
 on:
-  pull_request:
-    types: [closed]
+  push:
     branches:
       - master
 
@@ -10,60 +7,64 @@ permissions:
   contents: write
 
 jobs:
-  build:
-    if: github.event.pull_request.merged == true
+  build_and_push:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v2
+    - name: Checkout code
+      uses: actions/checkout@v2
 
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.1'
-          tools: composer:v2
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.1'
 
-      - name: Install PHP Dependencies
-        run: composer install --prefer-dist --no-progress
+    - name: Install PHP dependencies
+      run: composer install
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v2
-        with:
-          node-version: '16'
-      
-      - name: Install Node Dependencies
-        run: npm ci
+    - name: Setup Node.js environment
+      uses: actions/setup-node@v2
+      with:
+        node-version: '14'
 
-      - name: Build
-        run: npm run build
+    - name: Install and build JS dependencies
+      run: |
+        npm ci
+        npm run build
 
-      - name: Bump version and Create a Git Tag
-        id: tag_version
-        uses: mathieudutour/github-tag-action@v6.1
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          default_bump: patch
+    - name: Checkout to builds branch
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git checkout -B builds
 
-      - name: Generate release description
-        id: generate_description
-        run: echo "::set-output name=body::$(git log $(git describe --tags --abbrev=0)..HEAD --oneline)"
-      
-      # If your plugin need to be zipped
-      - name: Zip the plugin
-        run: zip -r plugin-tools-server.zip .
+    - name: Commit changes
+      run: |
+        git add .
+        git commit -m "Built plugin"
 
-      - name: Create GitHub Release
-        id: create_release
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: ${{ steps.tag_version.outputs.new_tag }}
-          name: Release ${{ steps.tag_version.outputs.new_tag }}
-          body: ${{ steps.generate_description.outputs.body }}
-          draft: false
-          prerelease: false
-          files: |
-            plugin-tools-server.zip
-          
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Push changes
+      run: git push -f origin builds
+
+    - name: Bump version and Create a Git Tag
+      id: tag_version
+      uses: mathieudutour/github-tag-action@v6.1
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        default_bump: patch
+
+    - name: Generate release description
+      id: generate_description
+      run: echo "::set-output name=body::$(git log $(git describe --tags --abbrev=0)..HEAD --oneline)"
+
+    - name: Create GitHub Release
+      id: create_release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ steps.tag_version.outputs.new_tag }}
+        name: Release ${{ steps.tag_version.outputs.new_tag }}
+        body: ${{ steps.generate_description.outputs.body }}
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
