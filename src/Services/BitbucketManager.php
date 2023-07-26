@@ -1,7 +1,9 @@
 <?php
 
 namespace PluginToolsServer\Services;
+
 use Symfony\Component\Process\Process;
+use Bit3\GitPhp\GitRepository;
 
 class BitbucketManager
 {
@@ -20,6 +22,7 @@ class BitbucketManager
 
     public function cloneOrFetchRepositories()
     {
+        $packages = [];
         // Define the fields to fetch
         $fields = 'size,pagelen,page,values.full_name,values.name,values.slug,values.links.clone,values.links.html';
 
@@ -34,6 +37,7 @@ class BitbucketManager
         $page = 1;
         // we need to globally set a few things for git.
         // set the credentials helper & the git user and email.
+        //idempotent so we can call this function and it will handle if it is already been completed. 
         $this->setGitConfig();
 
         while ($nextPage) {
@@ -70,6 +74,7 @@ class BitbucketManager
                     echo "Fetching " . $repository['name'] . "...\n";
                     $process = new Process(['git', 'pull', '--all'], $localWorkTree, ['username' => $this->username, 'password' => $this->password]);
                 }
+                $packages[] = array("path"=>$localWorkTree, "full_name"=>$repository['full_name']);
             }
 
             $nextPage = isset($data['next']);
@@ -77,7 +82,112 @@ class BitbucketManager
         }
 
         echo "Done.\n";
+        return $packages;
     }
+
+    public function generateComposerPackages($packages)
+    {
+
+        $packageoutput = new \stdClass();
+        $packageoutput->packages = new \stdClass();
+        $count = 1;
+        foreach($packages as $package) {
+            echo "Count: " . $count . " Package: " . $package['full_name'] . "\n";
+
+            $plugin = $this->fetchPluginData($package);
+            $packageoutput->packages->{$plugin['slug']} = $plugin[$plugin['slug']];
+            $count ++;
+        }
+        echo "Writing packages.json...\n";
+        file_put_contents( $this->targetDir."/packages.json", json_encode($packageoutput));
+    }
+
+    private function fetchPluginData($package)
+    {
+        $plugin = [];
+        $fullName = $package['full_name'];
+        $path = $package['path'];
+
+        $git = new GitRepository($path);
+        echo "Generating... " . $package['full_name'] ."\n";
+
+        $remotes = $git->branch()->getNames();
+        $tags = $git->tag()->getNames();
+
+        list('slug'=>$slug, 'type'=>$type, 'description'=>$description) = $this->getComposerPackageDetails($path);
+
+        if ($slug === false) {
+            return false;
+        }
+
+        foreach($tags as $tag) {
+            $plugin[$slug][$tag] = [
+                'name' => $slug,
+                'version' => $tag,
+                'dist' => [
+                    'type' => 'zip',
+                    'url' => "https://bitbucket.org/{$fullName}/get/{$tag}.zip"
+                ],
+                'source' => [
+                    'type' => 'git',
+                    'url' => "git@bitbucket.org:{$fullName}.git",
+                    'reference' => $tag
+                ],
+                'type' => $type,
+                'description' => $description
+            ];
+        }
+    
+        foreach($remotes as $branch) {
+
+            $branchHash = $this->getGitBranchHash($path, $branch);
+
+            echo "Branch: " . $branch . " hash: " . $branchHash ."\n";
+            $devBranch = 'dev-' . $branch;
+            $plugin[$slug][$devBranch] = [
+                'name' => $slug,
+                'version' => $devBranch,
+                'dist' => [
+                    'type' => 'zip',
+                    'url' => "https://bitbucket.org/{$fullName}/get/{$branch}.zip"
+                ],
+                'source' => [
+                    'type' => 'git',
+                    'url' => "git@bitbucket.org:{$fullName}.git",
+                    'reference' => $branchHash
+                ],
+                'type' => $type,
+                'description' => $description
+            ];
+        }
+        $plugin['slug'] = $slug;
+        return $plugin;
+    }
+    
+    private function getComposerPackageDetails($filePath)
+    {
+        echo "filePath... " . $filePath . "\n";
+
+        if (($json = @file_get_contents($filePath . '/composer.json')) === false) {
+            $error = error_get_last();
+            echo "Unable to get package slug... " . $error['message'];
+            return false;
+        }
+        
+        // Decode the composer file.
+        $json_data = json_decode($json, true);
+
+        echo "Slug Name... " . $json_data['name'] . "\n";
+
+        $composerData = [
+            'slug' => $json_data['name'],
+            'type' => $json_data['type'],
+            'description' => $json_data['description']
+        ];
+
+        return $composerData;
+    }
+    
 
     public function setGitConfig()
     {
@@ -109,6 +219,13 @@ class BitbucketManager
         // maybe clean up the bare repo?:
         // $process = new Process(['rm', '-rf', $bareGit], $bareGit);
         // $process->run();
+    }
+
+    private function getGitBranchHash($path, $branch)
+    {
+        $process = new Process(['git', 'log', '-n', '1', $branch, '--pretty="%h'], $path);
+        $process->run();
+        return $process->getOutput();
     }
 
     public function validateSlug($slug)
