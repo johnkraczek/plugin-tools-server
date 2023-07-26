@@ -35,5 +35,27 @@ jobs:
     # Add a test script to composer.json, for instance: "test": "vendor/bin/phpunit"
     # Docs: https://getcomposer.org/doc/articles/scripts.md
 
-    # - name: Run test suite
-    #   run: composer run-script test
+    - name: Run test suite
+      run: composer run-script test
+
+    # Add a test  for JavaScript / React
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '16'
+    
+    - name: Print PWD
+      run: pwd
+      
+    - name: Print LS
+      run: ls -al
+    
+    - name: Install Node Dependencies
+      run: npm ci
+
+    - name: NPM Build
+      run: npm run build
+
+    - name: Run JavaScript Tests
+      run: npm test
