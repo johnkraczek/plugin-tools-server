@@ -50,7 +50,7 @@ jobs:
         run: |
           git add --force . 
           git commit -m "Built plugin version"
-          git push -u origin builds
+          git push --force -u origin builds
 
       - name: Bump version and Create a Git Tag
         id: tag_version
