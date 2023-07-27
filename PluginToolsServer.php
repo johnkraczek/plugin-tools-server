@@ -3,10 +3,10 @@
  * Plugin Name:     Plugin Tools Server By YDTB
  * Plugin URI:      https://github.com/roots/clover
  * Description:     WordPress starter plugin
- * Version:         0.0.1
- * Author:          Roots
- * Author URI:      https://roots.io/
- * License:         MIT License
+ * Version:         0.0.13
+ * Author:          John Kraczek
+ * Author URI:      https://github.com/johnkraczek
+ * License:         GPLv2 or later
  * Text Domain:     ydtb-plugin-tools-server
  * Domain Path:     /resources/lang
  */
