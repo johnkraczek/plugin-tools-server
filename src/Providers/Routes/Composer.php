@@ -9,7 +9,6 @@ class Composer implements Provider
     public function Register()
     {
 
-
         add_action('init', function () {
             add_rewrite_rule('^packages.json$', 'index.php?packages_json=1', 'top');
         });
@@ -19,7 +18,6 @@ class Composer implements Provider
             return $vars;
         });
 
-        
         add_action('template_redirect', function () {
             $packages_json = intval(get_query_var('packages_json'));
             if ($packages_json) {
