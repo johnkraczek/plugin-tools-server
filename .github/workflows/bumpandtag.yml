@@ -23,28 +23,10 @@ jobs:
           php-version: '8.1'
           tools: composer:v2
 
-      - name: Do Git Things
-        continue-on-error: true
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git checkout -B builds
-
-      - name: Install PHP Dependencies
-        run: composer install --prefer-dist --no-progress
-
       - name: Setup Node.js
         uses: actions/setup-node@v2
         with:
           node-version: '16'
-      
-      - name: Install Node Dependencies
-        run: npm ci
-
-      - name: Build
-        run: npm run build
-
-      
 
       - name: Bump version and Create a Git Tag
         id: tag_version
@@ -53,6 +35,36 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           default_bump: patch
           dry_run: true
+
+      - name: Update version in PHP file
+        run: |
+          sed -i 's/\(* Version: *\)[0-9]\+\.[0-9]\+\.[0-9]\+/\1'${{ steps.tag_version.outputs.new_version }}'/' PluginToolsServer.php
+
+      - name: Update version in package.json
+        run: |
+          npm version ${{ steps.tag_version.outputs.new_version }}
+
+      - name: Push Bumped version to master
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add PluginToolsServer.php package.json
+          git commit -m "Bump version to ${{ steps.tag_version.outputs.new_version }}"
+          git push origin master
+
+      # - name: New Branch Builds
+      #   continue-on-error: true
+      #   run: |
+      #     git checkout -B builds
+
+      - name: Install PHP Dependencies
+        run: composer install --prefer-dist --no-progress
+      
+      - name: Install Node Dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
 
       - name: Do Git Things
         run: |
