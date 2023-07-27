@@ -42,7 +42,7 @@ jobs:
 
       - name: Update version in package.json
         run: |
-          npm version ${{ steps.tag_version.outputs.new_version }}
+          npm version --no-git-tag-version ${{ steps.tag_version.outputs.new_version }}
 
       - name: Push Bumped version to master
         run: |
