@@ -50,7 +50,7 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git remote set-url origin https://x-access-token/:${{ secrets.PLUGINTOOLSSERVERTOKEN }}@github.com/${{ github.repository }}
+          git remote set-url origin https://x-access-token:${{ secrets.PLUGINTOOLSSERVERTOKEN }}@github.com/${{ github.repository }}
           git add PluginToolsServer.php package.json
           git commit -m "Bump version to ${{ steps.tag_version.outputs.new_version }}"
           git push origin master --force
