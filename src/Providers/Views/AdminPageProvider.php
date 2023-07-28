@@ -8,7 +8,6 @@ class AdminPageProvider implements Provider
     public function register()
     {
         add_action('admin_menu', array($this, 'settings_menu_link'));
-
     }
 
     public function settings_menu_link()
