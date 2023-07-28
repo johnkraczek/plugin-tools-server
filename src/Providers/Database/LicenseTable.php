@@ -10,7 +10,7 @@ class LicenseTable implements Provider
     {
         
         register_activation_hook(YDTB_PTOOLS_SERVER_PATH .'/PluginToolsServer.php', [$this,'create_license_table']);
-        register_deactivation_hook(YDTB_PTOOLS_SERVER_PATH .'/PluginToolsServer.php', [$this,'maybe_remove_license_table']);
+        register_deactivation_hook(YDTB_PTOOLS_SERVER_PATH .'/PluginToolsServer.php', [$this,'maybe_remove_all_plugin_data']);
     }
 
     public function create_license_table()
@@ -20,7 +20,8 @@ class LicenseTable implements Provider
         $charset_collate = $wpdb->get_charset_collate();
 
         $license_table_name = $wpdb->prefix . 'license_keys';
-        $sql = "CREATE TABLE {$license_table_name} (
+        if($wpdb->get_var("SHOW TABLES LIKE '$license_table_name'") != $license_table_name) {
+            $sql = "CREATE TABLE {$license_table_name} (
             id mediumint(9) NOT NULL AUTO_INCREMENT,
             license_key varchar(255) NOT NULL,
             expiry_date datetime DEFAULT '0000-00-00 00:00:00' NOT NULL,
@@ -31,10 +32,12 @@ class LicenseTable implements Provider
             UNIQUE (license_key)
         ) {$charset_collate};";
 
-        dbDelta($sql);
+            dbDelta($sql);
+        }
 
         $domain_table_name = $wpdb->prefix . 'license_domains';
-        $sql = "CREATE TABLE {$domain_table_name} (
+        if($wpdb->get_var("SHOW TABLES LIKE '$domain_table_name'") != $domain_table_name) {
+            $sql = "CREATE TABLE {$domain_table_name} (
             id mediumint(9) NOT NULL AUTO_INCREMENT,
             license_id mediumint(9) NOT NULL,
             domain varchar(255) NOT NULL,
@@ -43,29 +46,41 @@ class LicenseTable implements Provider
             PRIMARY KEY (id)
         ) {$charset_collate};";
         
-        dbDelta($sql);
+            dbDelta($sql);
 
-        // Try to add the foreign key
-        $wpdb->query("ALTER TABLE {$domain_table_name} ADD CONSTRAINT `fk_license_id` FOREIGN KEY (license_id) REFERENCES {$license_table_name}(id) ON DELETE CASCADE");
+            // Try to add the foreign key
+            $wpdb->query("ALTER TABLE {$domain_table_name} ADD CONSTRAINT `fk_license_id` FOREIGN KEY (license_id) REFERENCES {$license_table_name}(id) ON DELETE CASCADE");
+        }
+
+
+        
+        // while we are here we need to create the secret key for JWT
+        if(!get_option('PTS_JWT_SECRET_KEY')) {
+            // Generate a secure random string for the secret key.
+            $secretKey = bin2hex(random_bytes(32));
+            // Store the secret key in WordPress database.
+            add_option('PTS_JWT_SECRET_KEY', $secretKey);
+        }
 
     }
 
-    public function maybe_remove_license_table()
+    public function maybe_remove_all_plugin_data()
     {
-        $remove_on_deactivation = get_option('remove_license_table_on_deactivation', false);
+        //@todo add option to remove on deactivation in the settings page.
+        $remove_on_deactivation = get_option('PTS_Remove_on_deactivation', false);
         if($remove_on_deactivation) {
             global $wpdb;
             $license_table_name = $wpdb->prefix . 'license_keys';
             $domain_table_name = $wpdb->prefix . 'license_domains';
     
-            // Delete all records from 'license_domains' table
             $wpdb->query("DELETE FROM $domain_table_name");
     
-            // Now drop the 'license_domains' table
             $wpdb->query("DROP TABLE IF EXISTS $domain_table_name");
-    
-            // Now drop the 'license_keys' table
             $wpdb->query("DROP TABLE IF EXISTS $license_table_name");
+
+            // options
+            delete_option('PTS_JWT_SECRET_KEY');
+            delete_option('PTS_Remove_on_deactivation');
         }
     }
 

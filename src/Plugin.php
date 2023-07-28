@@ -3,6 +3,7 @@
 namespace PluginToolsServer;
 use \PluginToolsServer\Providers\Provider;
 use \PluginToolsServer\Providers\Rest\SettingsRestAPIPRovider;
+use \PluginToolsServer\Providers\Rest\PluginUpdateAPI;
 use \PluginToolsServer\Providers\Views\AdminPageProvider;
 use \PluginToolsServer\Providers\Commands\CommandServiceProvider;
 use \PluginToolsServer\Providers\Routes\Composer;
@@ -15,6 +16,7 @@ class Plugin implements Provider
         return [
             SettingsRestAPIPRovider::class,
             AdminPageProvider::class,
+            PluginUpdateAPI::class,
             CommandServiceProvider::class,
             Composer::class,
             LicenseTable::class,
