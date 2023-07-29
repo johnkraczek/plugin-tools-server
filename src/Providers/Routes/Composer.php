@@ -6,7 +6,7 @@ use PluginToolsServer\Providers\Provider;
 
 class Composer implements Provider
 {
-    public function Register()
+    public function register()
     {
 
         add_action('init', function () {

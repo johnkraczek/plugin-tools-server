@@ -44,7 +44,8 @@
     "phpseclib/phpseclib": "^3.0",
     "symfony/process": "^6.3",
     "bit3/git-php": "dev-release/1.6.0",
-    "firebase/php-jwt": "^6.8"
+    "firebase/php-jwt": "^6.8",
+    "deliciousbrains/wp-background-processing": "^1.1"
   },
   "scripts": {
     "lint": "pint",

@@ -8,7 +8,6 @@ class LicenseTable implements Provider
 
     public function register()
     {
-        
         register_activation_hook(YDTB_PTOOLS_SERVER_PATH .'/PluginToolsServer.php', [$this,'create_license_table']);
         register_deactivation_hook(YDTB_PTOOLS_SERVER_PATH .'/PluginToolsServer.php', [$this,'maybe_remove_all_plugin_data']);
     }

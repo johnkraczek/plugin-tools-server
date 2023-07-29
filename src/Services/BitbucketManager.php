@@ -3,6 +3,7 @@
 namespace PluginToolsServer\Services;
 
 use Symfony\Component\Process\Process;
+use PluginToolsServer\Services\Crypto;
 use Bit3\GitPhp\GitRepository;
 
 class BitbucketManager
@@ -10,14 +11,38 @@ class BitbucketManager
     private $username;
     private $password;
     private $workspace;
-    private $targetDir;
+    public $targetDir;
 
-    public function __construct($username, $password, $workspace, $targetDir)
+    public function __construct()
     {
-        $this->username = $username;
-        $this->password = $password;
-        $this->workspace = $workspace; // workspace slug from bitbucket
-        $this->targetDir = $targetDir; // parent directory for all of the repos
+        $settings = get_option(YDTB_PTOOLS_OPTIONS_SLUG);
+
+        $this->username = $settings['bitbucket_username'];
+        $this->password = Crypto::Decrypt($settings['bitbucket_password']);
+        $this->workspace = $settings['bitbucket_workspace']; // workspace slug from bitbucket
+        $this->targetDir = wp_upload_dir()['basedir']. '/plugin-tools-server';
+
+    }
+
+    public function getUser()
+    {
+        return $this->username;
+    }
+
+    public function getWorkspace()
+    {
+        return $this->workspace;
+    }
+
+    // ??? is this needed? ???
+    // private function getPassword()
+    // {
+    //     return Crypto::Decrypt($this->password);
+    // }
+
+    public function getTargetDir()
+    {
+        return $this->targetDir;
     }
 
     public function cloneOrFetchRepositories()
@@ -234,5 +259,33 @@ class BitbucketManager
             throw new Exception('Invalid slug: ' . $slug);
         }
         return $slug;
+    }
+
+    public function handlePluginUpdate($url, $slug, $name, $version)
+    {
+        $temp_file_path = YDTB_PTOOLS_SERVER_PATH."/tempzip.zip"; // Create a temporary file
+        $response = wp_remote_get($url, array(
+            'timeout'  => 300,
+            'stream'   => true,  // Stream the response to the temporary file
+            'filename' => $temp_file_path,
+        ));
+    
+        if (is_wp_error($response)) {
+            unlink($temp_file_path);  // Remove the temporary file
+            throw new \Exception("Error fetching plugin from $url: " . $response->get_error_message());
+        }
+    
+        if (200 != wp_remote_retrieve_response_code($response)) {
+            unlink($temp_file_path);  // Remove the temporary file
+            throw new \Exception("Unexpected response fetching plugin from $url: " . wp_remote_retrieve_response_message($response));
+        }
+    
+        // At this point, the plugin file has been downloaded to $temp_file_path
+    
+        // You can now move this file to your desired location or directly install it using WordPress' functions
+        // ...
+    
+        // Finally, don't forget to remove the temporary file
+        //unlink($temp_file_path);
     }
 }

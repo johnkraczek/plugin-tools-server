@@ -12,16 +12,7 @@ class PTSCommands extends \WP_CLI_Command
     public function __construct()
     {
         parent::__construct();
-        $wpUploadsDir = wp_upload_dir()['basedir'];
-        $this->targetDir = $wpUploadsDir . '/plugin-tools-server';
-        $this->settings = get_option(YDTB_PTOOLS_OPTIONS_SLUG);
-
-        $this->bitbucketManager = new BitbucketManager(
-            $this->settings['bitbucket_username'],
-            Crypto::Decrypt($this->settings['bitbucket_password']),
-            $this->settings['bitbucket_workspace'],
-            $this->targetDir
-        );
+        $this->bitbucketManager = new BitbucketManager();
     }
 
     public function fetchAll()
@@ -31,17 +22,14 @@ class PTSCommands extends \WP_CLI_Command
 
     public function getOptions()
     {
-
-        echo "Bitbucket_User". $this->settings['bitbucket_username'] ."\n";
-        echo "Bitbucket_Workspace". $this->settings['bitbucket_workspace'] ."\n";
-
-        $password_decrypted = Crypto::Decrypt($this->settings['bitbucket_password']);
-        echo "Bitbucket_AppPass: ". $password_decrypted . "\n";
+        echo "Bitbucket_User". $this->bitbucketManager->getUser() ."\n";
+        echo "Bitbucket_Workspace". $this->bitbucketManager->getWorkspace() ."\n";
+        //echo "Bitbucket_AppPass: ". $this->bitbucketManager->getPassword() . "\n";
     }
 
     public function removeRepos(){
         \WP_CLI::confirm( "Are you sure you want to remove the repos?" );
-        RimRaf::rrmdir($this->targetDir);
+        RimRaf::rrmdir($this->bitbucketManager->getTargetDir());
     }
 
     public function generateComposer(){
