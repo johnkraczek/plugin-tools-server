@@ -8,7 +8,6 @@ class AdminPageProvider implements Provider
     public function register()
     {
         add_action('admin_menu', array($this, 'settings_menu_link'));
-
     }
 
     public function settings_menu_link()
@@ -20,7 +19,7 @@ class AdminPageProvider implements Provider
 
     public function load_assets()
     {
-        $entrypoints_manifest = YDTB_PTOOLS_SERVER_PATH."/dist/entrypoints.json";
+        $entrypoints_manifest = YDTB_PTOOLS_SERVER_PATH."dist/entrypoints.json";
 
         if (!$entrypoints_manifest) {
             throw new \Exception('Example: you must run `yarn build` before using this plugin.');

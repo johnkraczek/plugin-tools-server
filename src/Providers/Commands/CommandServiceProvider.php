@@ -4,6 +4,7 @@ namespace PluginToolsServer\Providers\Commands;
 
 use PluginToolsServer\Commands\PTSCommands;
 use PluginToolsServer\Providers\Provider;
+use PluginToolsServer\Services\ServiceContainer;
 
 class CommandServiceProvider implements Provider
 {
