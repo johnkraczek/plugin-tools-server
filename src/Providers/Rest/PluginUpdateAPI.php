@@ -123,16 +123,15 @@ class PluginUpdateAPI implements Provider
 
         if (!preg_match('/^[a-z0-9]+(\/[a-z0-9-]+)?$/i', $data['pluginSlug'])) {
             return new \WP_Error('validation_error', 'Invalid plugin slug. Expected format: vendor/plugin', array('status' => 400));
-        } else {
-            $pluginSlug = sanitize_key($data['pluginSlug']);
-        }
-
+        } 
+            $pluginSlug = $data['pluginSlug'];
+        
         // Validate and sanitize the plugin name
         if (strlen($data['pluginName']) > 30) {
             return new \WP_Error('validation_error', 'Plugin name should be less than 30 characters', array('status' => 400));
-        } else {
+        } 
             $pluginName = sanitize_text_field($data['pluginName']);
-        }
+
 
         // Validate the version (no sanitization, as version strings may legitimately contain non-alphanumeric characters)
         if (!preg_match('/^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(-(0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(\.(0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*)?(\+[0-9a-zA-Z-]+(\.[0-9a-zA-Z-]+)*)?$/', $data['pluginVersion'])) {
@@ -149,7 +148,10 @@ class PluginUpdateAPI implements Provider
         ]);
        
         $this->downloadJob->dispatch();  
-        return new \WP_REST_Response('Plugin download initiated.', 200);
+        return new \WP_REST_Response(array(
+            'result' => 'success',
+            'message' => 'Plugin update job dispatched.'
+        ), 200);
     }
 
     public function getPermissionCallback($request)

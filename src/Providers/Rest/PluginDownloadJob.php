@@ -19,8 +19,6 @@ class PluginDownloadJob extends \WP_Async_Request {
     
         protected function handle() {
 
-            error_log(print_r($_POST, true));
-
             $url= $_POST['plugin_url'];
             $slug= $_POST['plugin_slug'];
             $name= $_POST['plugin_name'];
