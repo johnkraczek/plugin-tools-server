@@ -2,16 +2,12 @@ import React from 'react';
 
 import PluginRow from './PluginRow';
 
+import { usePluginContext } from "../../contexts/pluginContext";
+
 function PluginTable() {
 
-    // const plugins = [
-    //     { name: 'Plugin 1', availableVersion: '1.0', currentVersion: '1.0', lastPushed: '2023-08-01', slug: 'plugin-1' },
-    //     { name: 'Plugin 2', availableVersion: '1.0', currentVersion: '1.0', lastPushed: '2023-08-01', slug: 'plugin-2' },
-    //     { name: 'Plugin 3', availableVersion: '1.0', currentVersion: '1.0', lastPushed: '2023-08-01', slug: 'plugin-3' },
-    //     { name: 'Plugin 4', availableVersion: '1.0', currentVersion: '1.0', lastPushed: '2023-08-01', slug: 'plugin-4' },
-    //     { name: 'Plugin 5', availableVersion: '1.0', currentVersion: '1.0', lastPushed: '2023-08-01', slug: 'plugin-5' },
-    //     // More plugins...
-    //   ]
+    const { PluginData } = usePluginContext();
+    
 
     return (
         <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:rounded-lg" >
@@ -28,7 +24,7 @@ function PluginTable() {
                     </tr>
                 </thead>
                 <tbody className="divide-y mb-12 divide-gray-200 bg-white overflow-visible">
-                    {plugins.map((plugin) => <PluginRow key={plugin.slug} plugin={plugin} />)}
+                    {PluginData.map((plugin) => <PluginRow key={plugin.slug} plugin={plugin} />)}
                 </tbody>
             </table>
         </div>

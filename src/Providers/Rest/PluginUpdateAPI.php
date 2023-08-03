@@ -7,10 +7,10 @@ use Firebase\JWT\Key;
 use PluginToolsServer\Providers\Database\LicenseTable;
 use PluginToolsServer\Providers\Provider;
 use PluginToolsServer\Providers\Rest\PluginDownloadJob;
+use PluginToolsServer\Providers\Rest\PTSRestProvider;
 
 class PluginUpdateAPI implements Provider
 {
-
     private PluginDownloadJob $downloadJob;
 
     public function register()
@@ -28,7 +28,7 @@ class PluginUpdateAPI implements Provider
             register_rest_route('pt-server/v1', '/update', [
                 'methods' => 'POST',
                 'callback' => array( $this, 'updateSinglePlugin' ),
-                'permission_callback' => array( $this, 'getPermissionCallback' )
+                'permission_callback' => array( PTSRestProvider::class, 'getPermissionCallback' )
             ]);
         });
 
@@ -153,17 +153,4 @@ class PluginUpdateAPI implements Provider
             'message' => 'Plugin update job dispatched.'
         ), 200);
     }
-
-    public function getPermissionCallback($request)
-    {
-        $token = $request->get_header('Authorization');
-    
-        // Just checking if the 'Authorization' header exists and is in the right format.
-        if (empty($token)) {
-            return new WP_Error('rest_forbidden', 'Token Missing', array('status' => 403));
-        }
-    
-        return true;
-    }
-
 }

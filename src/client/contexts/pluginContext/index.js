@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useReducer, useState } from "react";
 import axios from "axios";
 
-import { reducer } from "./reducer";
+import { pluginsReducer } from "./reducer";
 
 const axiosOptions = {
     headers: { 'X-WP-Nonce': pts.nonce }
@@ -37,15 +37,15 @@ const verifyPluginData = (plugins) => {
 
 const PluginProvider = ({ children }) => {
 
-    const [Data, dispatch] = useReducer(reducer, []);
+    const [PluginData, dispatch] = useReducer(pluginsReducer, []);
     const [loaded, setLoaded] = useState(false);
 
     const fetchPlugins = () => {
         axios.get(PluginDataEndpoint, axiosOptions)
             .then(res => {
                 if (res.status === 200 && res.data) {
-    
                     try {
+                        console.log(res)
                         verifyPluginData(res.data);
                         dispatch({ type: 'INITIALIZE_PLUGINS', value: res.data });
                         setLoaded(true);
@@ -69,7 +69,7 @@ const PluginProvider = ({ children }) => {
     }
 
     return (
-        <PluginContext.Provider value={{ Data, dispatch, loaded, refreshPlugins }}>
+        <PluginContext.Provider value={{ PluginData, dispatch, loaded, refreshPlugins }}>
             {children}
         </PluginContext.Provider>
     );

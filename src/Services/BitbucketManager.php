@@ -627,7 +627,120 @@ class BitbucketManager
             throw new \Exception("Cannot open the ZIP file.");
         }
     }
-
+        
+    public function getPluginDataForFrontEnd()
+    {
+        // Scan for all directories (representing plugins) within the target directory
+        $pluginDirs = array_filter(glob($this->targetDir . '/*'), 'is_dir');
     
+        $pluginData = [];
+    
+        // Iterate over all plugin directories
+        foreach ($pluginDirs as $pluginDir) {
+            // Get the directory name as slug
+            $dirSlug = basename($pluginDir);
+    
+            // Make sure the directory is a git repository
+            if (!file_exists($pluginDir . '/.git')) {
+                continue;
+            }
+    
+            // Get the available version and the date of the last push
+            $versionAndDate = $this->getLatestVersionAndDate($dirSlug);
+    
+            // Get the current version of the plugin
+            $currentVersion = $this->getCurrentVersion($dirSlug);
+    
+            // Get the user-friendly plugin name
+            $pluginName = $this->getPluginName($pluginDir);
+            if(!$pluginName) {
+                // If no user-friendly name found, use the directory slug
+                $pluginName = $dirSlug;
+            }
+    
+            // Get the composer slug
+            $composerSlug = $this->getComposerSlug($pluginDir);
+            if(!$composerSlug) {
+                // If no composer slug found, use the directory slug
+                $composerSlug = $dirSlug;
+            }
+    
+            // Construct the plugin data
+            $pluginData[] = [
+                'name' => $pluginName,
+                'availableVersion' => $versionAndDate['availableVersion'],
+                'currentVersion' => $currentVersion,
+                'lastPushed' => $versionAndDate['lastPushed'],
+                'slug' => $composerSlug
+            ];
+        }
+    
+        return $pluginData;
+    }
+    
+    private function getPluginName($pluginDir)
+    {
+        // Scan php files in plugin directory
+        foreach (glob($pluginDir.'/*.php') as $file) {
+            $fileContent = file_get_contents($file);
+            if(preg_match('/\* Plugin Name:\s*(.+)/', $fileContent, $matches)) {
+                // return plugin name if found
+                return trim($matches[1]);
+            }
+        }
+    
+        // return false if no plugin name found
+        return false;
+    }
 
+    private function getLatestVersionAndDate($slug)
+    {
+        $git = new GitRepository($this->targetDir . '/' . $slug);
+    
+        // Get all the tags in the repository sorted in reverse chronological order
+        $tags = $git->tag()->getAllTags();
+    
+        if (empty($tags)) {
+            // If there are no tags, return some default value
+            return [
+                'availableVersion' => null,
+                'lastPushed' => null
+            ];
+        }
+    
+        // The first element of the tags array is the latest version
+        $latestTag = $tags[0];
+        // Get the commit for the given tag
+        $commit = $git->tag()->getCommit($latestTag);
+    
+        // Get the DateTime object for the commit
+        $dateTime = $commit->getDateTime();
+    
+        // Format the date as a string in 'Y-m-d' format
+        $dateString = $dateTime->format('Y-m-d');
+    
+        // Return an array that contains both the latest version and the date of the last push
+        return [
+            'availableVersion' => $latestTag,
+            'lastPushed' => $dateString
+        ];
+    }
+
+    private function getComposerSlug($pluginDir)
+    {
+        $composerFilePath = $pluginDir . '/composer.json';
+    
+        // Check if composer.json exists
+        if(file_exists($composerFilePath)) {
+            $composerData = json_decode(file_get_contents($composerFilePath), true);
+            // Check if 'name' field is set in composer.json
+            if(isset($composerData['name'])) {
+                return $composerData['name'];
+            }
+        }
+    
+        // Return false if composer.json not found or 'name' field not set
+        return false;
+    }
+    
 }
