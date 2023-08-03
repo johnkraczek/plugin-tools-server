@@ -4,14 +4,14 @@ import PluginRow from './PluginRow';
 
 function PluginTable() {
 
-    const plugins = [
-        { name: 'Plugin 1', availableVersion: '1.0', currentVersion: '1.0', lastPushed: '2023-08-01', slug: 'plugin-1' },
-        { name: 'Plugin 2', availableVersion: '1.0', currentVersion: '1.0', lastPushed: '2023-08-01', slug: 'plugin-2' },
-        { name: 'Plugin 3', availableVersion: '1.0', currentVersion: '1.0', lastPushed: '2023-08-01', slug: 'plugin-3' },
-        { name: 'Plugin 4', availableVersion: '1.0', currentVersion: '1.0', lastPushed: '2023-08-01', slug: 'plugin-4' },
-        { name: 'Plugin 5', availableVersion: '1.0', currentVersion: '1.0', lastPushed: '2023-08-01', slug: 'plugin-5' },
-        // More plugins...
-      ]
+    // const plugins = [
+    //     { name: 'Plugin 1', availableVersion: '1.0', currentVersion: '1.0', lastPushed: '2023-08-01', slug: 'plugin-1' },
+    //     { name: 'Plugin 2', availableVersion: '1.0', currentVersion: '1.0', lastPushed: '2023-08-01', slug: 'plugin-2' },
+    //     { name: 'Plugin 3', availableVersion: '1.0', currentVersion: '1.0', lastPushed: '2023-08-01', slug: 'plugin-3' },
+    //     { name: 'Plugin 4', availableVersion: '1.0', currentVersion: '1.0', lastPushed: '2023-08-01', slug: 'plugin-4' },
+    //     { name: 'Plugin 5', availableVersion: '1.0', currentVersion: '1.0', lastPushed: '2023-08-01', slug: 'plugin-5' },
+    //     // More plugins...
+    //   ]
 
     return (
         <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:rounded-lg" >

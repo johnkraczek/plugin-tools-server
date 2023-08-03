@@ -8,8 +8,6 @@ const axiosOptions = {
 };
 const SettingsFormEndpoint = pts.rest + 'settings';
 
-console.log(SettingsFormEndpoint);
-
 const SettingsContext = createContext();
 export const useSettingsContext = () => useContext(SettingsContext);
 
@@ -24,7 +22,7 @@ const SettingsProvider = ({ children }) => {
                 if (res.status == 200 && res.data) {
                     dispatch({ type: "INITIALIZE", value: res.data })
                 }
-                console.log('get', res);
+                //console.log('get', res);
             })
             .catch(err => {
                 console.log(err)

@@ -1,13 +1,13 @@
 import React from 'react'
 import SplitButton from './splitButton';
 
+// right now this is just a placeholder function
 function handleClick(plugin, message) {
     console.log(plugin.name + " " + message);
 }
 
 function PluginRow({ plugin }) {
     // Initialize hooks and state here
-
     return (
         <tr className="overflow-visible">
             <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">{plugin.name}</td>
