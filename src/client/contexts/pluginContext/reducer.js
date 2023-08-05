@@ -1,4 +1,7 @@
 export const pluginsReducer = (state, action) => {
+
+    console.log(action);
+
     switch (action.type) {
         case "ADD_PLUGIN":
             const existingPluginIndex = state.findIndex(plugin => plugin.slug === action.plugin.slug);
@@ -27,7 +30,10 @@ export const pluginsReducer = (state, action) => {
             });
 
         case "INITIALIZE_PLUGINS":
-            return Array.isArray(action.plugins) ? [...action.plugins] : [];
+
+            let plugins = action.value;
+            plugins.sort((a, b) => new Date(b.lastPushed) - new Date(a.lastPushed));
+            return Array.isArray(plugins) ? [...plugins] : [];
 
         default:
             return state;

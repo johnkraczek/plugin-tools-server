@@ -1,30 +1,23 @@
-import React, {useEffect} from 'react';
+import React, { useEffect } from 'react';
 
 import PluginRow from './PluginRow';
 
 import { usePluginContext } from "../../contexts/pluginContext";
 
-
-const plugins = [
-    { name: 'Plugin 1', currentVersion: '1.0', lastPushed: '2023-08-01', slug: 'plugin-1' },
-    { name: 'Plugin 2', currentVersion: '1.0', lastPushed: '2023-08-01', slug: 'plugin-2' },
-    { name: 'Plugin 3', currentVersion: '1.0', lastPushed: '2023-08-01', slug: 'plugin-3' },
-    { name: 'Plugin 4', currentVersion: '1.0', lastPushed: '2023-08-01', slug: 'plugin-4' },
-    { name: 'Plugin 5', currentVersion: '1.0', lastPushed: '2023-08-01', slug: 'plugin-5' },
-    // More plugins...
-  ]
-
+import TimeAgo from 'javascript-time-ago'
+import en from 'javascript-time-ago/locale/en.json'
+TimeAgo.addDefaultLocale(en)
 
 function PluginTable() {
 
     const { PluginData } = usePluginContext();
 
-    useEffect(()=>{
+    useEffect(() => {
         console.log(PluginData)
-    },[PluginData])
-    
+    }, [PluginData])
+
     return (
-        <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:rounded-lg" >
+        <div className="shadow ring-1 ring-black ring-opacity-5 sm:rounded-lg mb-10" >
             <table className="min-w-full divide-y divide-gray-300">
                 <thead className="bg-gray-50">
                     <tr>
@@ -32,8 +25,7 @@ function PluginTable() {
                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Current Version</th>
                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Last Pushed</th>
                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Composer Slug</th>
-                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Action</th>
-
+                        <th scope="col" className="px-3 py-3.5 text-left w-20 text-sm font-semibold text-gray-900">Action</th>
                     </tr>
                 </thead>
                 <tbody className="divide-y mb-12 divide-gray-200 bg-white overflow-visible">
@@ -43,6 +35,5 @@ function PluginTable() {
         </div>
     )
 }
-
 
 export default PluginTable;

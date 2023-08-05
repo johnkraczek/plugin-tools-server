@@ -194,15 +194,20 @@ class BitbucketManager
     
     private function generatePluginMetaData($tags, $path, $composerSlug)
     {
+
+        echo "Generating Plugin Meta Data... " . $composerSlug . "\n";
+        echo print_r($tags, true) . "\n";
+
         $count = count($tags);
-        if ($count === 0) {
-            return null;
-        } elseif ($count === 1) {
-            return $tags[0];
+        if ($count === 0 ) {
+            $currentTag = 'master';
+        } elseif ($count == 1) {
+            $currentTag = $tags[0];
         } else {
             usort($tags, 'version_compare');
             $currentTag = end($tags);
         }
+        echo "Current Tag: " . $currentTag . "\n";
 
         $process = new Process(['git', 'show', '-s', '--format=%ci', "$currentTag^{commit}"], $path);
         $process->run();
@@ -215,7 +220,11 @@ class BitbucketManager
         // Return the output, trimming any whitespace at the end
         $lastPushed = trim($process->getOutput());
 
+        echo "Last Pushed: " . $lastPushed . "\n";
+
         $pluginName = $this->getPluginName($path);
+
+        echo "Plugin Name: " . $pluginName . "\n";
 
         $plugin['pts_meta'] = array(
             'name' => $pluginName,
@@ -229,7 +238,7 @@ class BitbucketManager
         $existingData = get_option('pts_plugin_list_meta', []); // default to an empty array if option doesn't exist
 
         // Use the plugin's slug as a unique key and update its metadata
-        $existingData[$composerSlug] = $$plugin;
+        $existingData[$composerSlug] = $plugin;
 
         // Save updated data back to the database
         update_option('pts_plugin_list_meta', $existingData);

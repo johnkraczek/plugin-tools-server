@@ -19,9 +19,6 @@ const shadowRootElement = document.createElement('div');
 const shadowStyleElement = document.createElement('link');
 shadowStyleElement.rel = 'stylesheet';
 shadowStyleElement.type = 'text/css';
-
-console.log(pts);
-
 shadowStyleElement.href = `${pts.root}/dist/css/client${pts.cssHash?"."+pts.cssHash:""}.css`;
 
 shadowContainer.appendChild(shadowStyleElement);

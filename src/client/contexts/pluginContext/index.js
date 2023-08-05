@@ -25,7 +25,7 @@ const verifyPluginData = (plugins) => {
             throw new Error(`Plugin at index ${index} must be an object`);
         }
 
-        const requiredKeys = ['name', 'availableVersion', 'currentVersion', 'lastPushed', 'slug'];
+        const requiredKeys = ['name', 'currentVersion', 'lastPushed', 'slug'];
 
         requiredKeys.forEach(key => {
             if (!Object.prototype.hasOwnProperty.call(plugin, key)) {
@@ -49,7 +49,7 @@ const PluginProvider = ({ children }) => {
             .then(res => {
                 if (res.status === 200 && res.data) {
                     try {
-                        console.log(res)
+                        console.log("the data is: " + res.data)
                         verifyPluginData(res.data);
                         dispatch({ type: 'INITIALIZE_PLUGINS', value: res.data });
                         setLoaded(true);
