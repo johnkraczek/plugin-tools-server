@@ -8,8 +8,6 @@ const axiosOptions = {
 };
 const SettingsFormEndpoint = pts.rest + 'settings';
 
-console.log(SettingsFormEndpoint);
-
 const SettingsContext = createContext();
 export const useSettingsContext = () => useContext(SettingsContext);
 

@@ -3,26 +3,22 @@
 namespace PluginToolsServer;
 
 use \PluginToolsServer\Providers\Provider;
-use \PluginToolsServer\Providers\Rest\SettingsRestAPIPRovider;
-use \PluginToolsServer\Providers\Rest\PluginUpdateAPI;
 use \PluginToolsServer\Providers\Views\AdminPageProvider;
 use \PluginToolsServer\Providers\Commands\CommandServiceProvider;
 use \PluginToolsServer\Providers\Routes\Composer;
 use \PluginToolsServer\Providers\Database\LicenseTable;
+use \PluginToolsServer\Providers\Rest\RestRouter;
 
 class Plugin implements Provider
 {
-
     public function register()
     {
-
         $Providers = [
-            SettingsRestAPIPRovider::class,
             AdminPageProvider::class,
             Composer::class,
             LicenseTable::class,
             CommandServiceProvider::class,
-            PluginUpdateAPI::class,
+            RestRouter::class,
         ];
 
         foreach ($Providers as $provider) {
