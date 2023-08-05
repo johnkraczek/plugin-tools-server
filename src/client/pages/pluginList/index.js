@@ -11,7 +11,6 @@ const PluginList = () => {
         setTitle("YDTB Plugin Tools - Plugin List");
     }, [])
 
-
     return (
         <Box>
             <div className="px-4 sm:px-6 lg:px-8 py-6">

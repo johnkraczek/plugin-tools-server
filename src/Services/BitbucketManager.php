@@ -46,109 +46,108 @@ class BitbucketManager
         return $this->targetDir;
     }
 
-    public function cloneOrFetchRepositories()
+    public function cloneOrFetchRepositories($silent = false)
     {
         $packages = [];
-        // Define the fields to fetch
         $fields = 'size,pagelen,page,values.full_name,values.name,values.slug,values.links.clone,values.links.html';
-
-        // Create the context for the request
+    
         $context = stream_context_create([
             'http' => [
                 'header' => 'Authorization: Basic ' . base64_encode($this->username . ':' . $this->password),
             ],
         ]);
-
+    
         $nextPage = true;
         $page = 1;
-        // we need to globally set a few things for git.
-        // set the credentials helper & the git user and email.
-        //idempotent so we can call this function and it will handle if it is already been completed.
         $this->setGitConfig();
-
+    
         while ($nextPage) {
-            // Fetch repositories
-            echo "Fetching Repositories in " . $this->workspace . "...\n";
+            $this->logOutput("Fetching Repositories in " . $this->workspace . "...\n", $silent);
             $response = file_get_contents("https://api.bitbucket.org/2.0/repositories/".$this->workspace."?pagelen=100&page=$page&fields=$fields", false, $context);
             $data = json_decode($response, true);
-
-            echo "Found " . $data['size'] . " repositories.\n";
-
+    
+            $this->logOutput("Found " . $data['size'] . " repositories.\n", $silent);
+    
             foreach ($data['values'] as $repository) {
-                // we want to veriry that we didnt recieve something bad.
                 $slug = $this->validateSlug($repository['slug']);
-                
-                // Define the local path for the repo
                 $localWorkDir = $this->targetDir  . '/' . $slug;
                 $localGitDir = $localWorkDir . "/$slug.git";
                 $localWorkTree = $localWorkDir  . '/' . $slug;
-
-                // If the directory doesn't exist, create it
+    
                 if (!is_dir($localWorkDir)) {
-                    echo "Cloning " . $repository['name'] . "...\n";
+                    $this->logOutput("Cloning " . $repository['name'] . "...\n", $silent);
                     mkdir($localWorkTree, 0700, true);
-                    // Clone the repository into the local work directory
                     $process = new Process(['git', 'clone', $repository['links']['clone'][0]['href'], $localWorkTree], null, ['GIT_USERNAME' => $this->username, 'GIT_PASSWORD' => $this->password]);
                     $process->run();
-                    // move the .git directory to a separate directory so that we can overwrite it later.
                     $process = new Process(['git', 'init', '--separate-git-dir', $localGitDir], $localWorkTree);
                     $process->run();
-                    // keep the .git file somewhere else so that we are able to copy it back later.
                     copy($localWorkTree . '/.git', $localGitDir.'/.gitBackup');
                 } else {
-                    // If the repository does exist, fetch the latest changes
-                    echo "Pulling " . $repository['name'] . "...\n";
+                    $this->logOutput("Pulling " . $repository['name'] . "...\n", $silent);
                     $process = new Process(['git', 'pull', '--all'], $localWorkTree, ['username' => $this->username, 'password' => $this->password]);
                 }
                 $packages[] = array("path"=>$localWorkTree, "full_name"=>$repository['full_name']);
             }
-
+    
             $nextPage = isset($data['next']);
             $page++;
         }
-
-        echo "Done.\n";
+    
+        $this->logOutput("Done.\n", $silent);
         return $packages;
     }
-
-    public function generateComposerPackages($packages)
+    
+    private function logOutput($message, $silent = false)
     {
+        if (!$silent) {
+            echo $message;
+        }
+    }
 
+    public function generateComposerPackages($packages, $silent = false)
+    {
         $packageoutput = new \stdClass();
         $packageoutput->packages = new \stdClass();
         $count = 1;
         foreach($packages as $package) {
-            echo "Count: " . $count . " Package: " . $package['full_name'] . "\n";
-
-            $plugin = $this->fetchPluginData($package);
+            if (!$silent) {
+                echo "Count: " . $count . " Package: " . $package['full_name'] . "\n";
+            }
+    
+            $plugin = $this->fetchPluginData($package, $silent);
             $packageoutput->packages->{$plugin['slug']} = $plugin[$plugin['slug']];
             $count ++;
         }
-        echo "Writing packages.json...\n";
+        if (!$silent) {
+            echo "Writing packages.json...\n";
+        }
         file_put_contents($this->targetDir."/packages.json", json_encode($packageoutput));
     }
-
-    private function fetchPluginData($package)
+    
+    private function fetchPluginData($package, $silent = false)
     {
         $plugin = [];
         $fullName = $package['full_name'];
         $path = $package['path'];
-
+    
         $git = new GitRepository($path);
-        echo "Generating... " . $package['full_name'] ."\n";
-
+    
+        $this->logOutput("Generating... " . $package['full_name'] ."\n", $silent);
+    
         $remotes = $git->branch()->getNames();
         $tags = $git->tag()->getNames();
-
-        list('slug'=>$slug, 'type'=>$type, 'description'=>$description) = $this->getComposerPackageDetails($path);
-
-        if ($slug === false) {
+    
+        list('slug'=>$composerSlug, 'type'=>$type, 'description'=>$description) = $this->getComposerPackageDetails($path);
+    
+        if ($composerSlug === false) {
             return false;
         }
-
+    
+        $this->generatePluginMetaData($tags, $path, $composerSlug, $silent);
+    
         foreach($tags as $tag) {
-            $plugin[$slug][$tag] = [
-                'name' => $slug,
+            $plugin[$composerSlug][$tag] = [
+                'name' => $composerSlug,
                 'version' => $tag,
                 'dist' => [
                     'type' => 'zip',
@@ -165,13 +164,14 @@ class BitbucketManager
         }
     
         foreach($remotes as $branch) {
-
+    
             $branchHash = $this->getGitBranchHash($path, $branch);
-
-            echo "Branch: " . $branch . " hash: " . $branchHash ."\n";
+    
+            $this->logOutput("Branch: " . $branch . " hash: " . $branchHash ."\n", $silent);
+    
             $devBranch = 'dev-' . $branch;
-            $plugin[$slug][$devBranch] = [
-                'name' => $slug,
+            $plugin[$composerSlug][$devBranch] = [
+                'name' => $composerSlug,
                 'version' => $devBranch,
                 'dist' => [
                     'type' => 'zip',
@@ -186,8 +186,53 @@ class BitbucketManager
                 'description' => $description
             ];
         }
-        $plugin['slug'] = $slug;
+    
+        $plugin['slug'] = $composerSlug;
+    
         return $plugin;
+    }
+    
+    private function generatePluginMetaData($tags, $path, $composerSlug)
+    {
+        $count = count($tags);
+        if ($count === 0) {
+            return null;
+        } elseif ($count === 1) {
+            return $tags[0];
+        } else {
+            usort($tags, 'version_compare');
+            $currentTag = end($tags);
+        }
+
+        $process = new Process(['git', 'show', '-s', '--format=%ci', "$currentTag^{commit}"], $path);
+        $process->run();
+
+        // Check and handle if the process fails
+        if (!$process->isSuccessful()) {
+            throw new ProcessFailedException($process);
+        }
+    
+        // Return the output, trimming any whitespace at the end
+        $lastPushed = trim($process->getOutput());
+
+        $pluginName = $this->getPluginName($path);
+
+        $plugin['pts_meta'] = array(
+            'name' => $pluginName,
+            'currentVersion' => $currentTag,
+            'lastPushed' => $lastPushed,
+            'slug' => $composerSlug,
+            'folder' => $path
+        );
+
+        // Get existing plugins data from database
+        $existingData = get_option('pts_plugin_list_meta', []); // default to an empty array if option doesn't exist
+
+        // Use the plugin's slug as a unique key and update its metadata
+        $existingData[$composerSlug] = $$plugin;
+
+        // Save updated data back to the database
+        update_option('pts_plugin_list_meta', $existingData);
     }
     
     private function getComposerPackageDetails($filePath)
@@ -627,57 +672,7 @@ class BitbucketManager
             throw new \Exception("Cannot open the ZIP file.");
         }
     }
-        
-    public function getPluginDataForFrontEnd()
-    {
-        // Scan for all directories (representing plugins) within the target directory
-        $pluginDirs = array_filter(glob($this->targetDir . '/*'), 'is_dir');
-    
-        $pluginData = [];
-    
-        // Iterate over all plugin directories
-        foreach ($pluginDirs as $pluginDir) {
-            // Get the directory name as slug
-            $dirSlug = basename($pluginDir);
-    
-            // Make sure the directory is a git repository
-            if (!file_exists($pluginDir . '/.git')) {
-                continue;
-            }
-    
-            // Get the available version and the date of the last push
-            $versionAndDate = $this->getLatestVersionAndDate($dirSlug);
-    
-            // Get the current version of the plugin
-            $currentVersion = $this->getCurrentVersion($dirSlug);
-    
-            // Get the user-friendly plugin name
-            $pluginName = $this->getPluginName($pluginDir);
-            if(!$pluginName) {
-                // If no user-friendly name found, use the directory slug
-                $pluginName = $dirSlug;
-            }
-    
-            // Get the composer slug
-            $composerSlug = $this->getComposerSlug($pluginDir);
-            if(!$composerSlug) {
-                // If no composer slug found, use the directory slug
-                $composerSlug = $dirSlug;
-            }
-    
-            // Construct the plugin data
-            $pluginData[] = [
-                'name' => $pluginName,
-                'availableVersion' => $versionAndDate['availableVersion'],
-                'currentVersion' => $currentVersion,
-                'lastPushed' => $versionAndDate['lastPushed'],
-                'slug' => $composerSlug
-            ];
-        }
-    
-        return $pluginData;
-    }
-    
+            
     private function getPluginName($pluginDir)
     {
         // Scan php files in plugin directory
@@ -693,54 +688,4 @@ class BitbucketManager
         return false;
     }
 
-    private function getLatestVersionAndDate($slug)
-    {
-        $git = new GitRepository($this->targetDir . '/' . $slug);
-    
-        // Get all the tags in the repository sorted in reverse chronological order
-        $tags = $git->tag()->getAllTags();
-    
-        if (empty($tags)) {
-            // If there are no tags, return some default value
-            return [
-                'availableVersion' => null,
-                'lastPushed' => null
-            ];
-        }
-    
-        // The first element of the tags array is the latest version
-        $latestTag = $tags[0];
-        // Get the commit for the given tag
-        $commit = $git->tag()->getCommit($latestTag);
-    
-        // Get the DateTime object for the commit
-        $dateTime = $commit->getDateTime();
-    
-        // Format the date as a string in 'Y-m-d' format
-        $dateString = $dateTime->format('Y-m-d');
-    
-        // Return an array that contains both the latest version and the date of the last push
-        return [
-            'availableVersion' => $latestTag,
-            'lastPushed' => $dateString
-        ];
-    }
-
-    private function getComposerSlug($pluginDir)
-    {
-        $composerFilePath = $pluginDir . '/composer.json';
-    
-        // Check if composer.json exists
-        if(file_exists($composerFilePath)) {
-            $composerData = json_decode(file_get_contents($composerFilePath), true);
-            // Check if 'name' field is set in composer.json
-            if(isset($composerData['name'])) {
-                return $composerData['name'];
-            }
-        }
-    
-        // Return false if composer.json not found or 'name' field not set
-        return false;
-    }
-    
 }

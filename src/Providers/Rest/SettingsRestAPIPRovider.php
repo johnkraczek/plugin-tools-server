@@ -14,19 +14,19 @@ class SettingsRestAPIPRovider implements Provider
             register_rest_route('pt-server/v1', '/settings', [
                 'methods' => 'GET',
                 'callback' => array( $this, 'get_settings_options' ),
-                'permission_callback' => array( $this, 'get_plugin_permission' )
+                'permission_callback' => array( PTSRestProvider::class, 'getPermissionCallback' )
             ]);
 
             register_rest_route('pt-server/v1', '/settings', [
                 'methods' => 'POST',
                 'callback' => array( $this, 'post_settings_update' ),
-                'permission_callback' => array( $this, 'get_plugin_permission' )
+                'permission_callback' => array( PTSRestProvider::class, 'getPermissionCallback' )
             ]);
 
             register_rest_route('pt-server/v1', '/settings', [
                 'methods' => 'DELETE',
                 'callback' => array( $this, 'delete_settings_options' ),
-                'permission_callback' => array( $this, 'get_plugin_permission' )
+                'permission_callback' => array( PTSRestProvider::class, 'getPermissionCallback' )
             ]);
         });
     }
@@ -84,15 +84,4 @@ class SettingsRestAPIPRovider implements Provider
         return new \WP_REST_Response($settings, 200);
     }
 
-    public function get_plugin_permission()
-    {
-        if (!current_user_can('manage_options')) {
-            return new \WP_Error(
-                'rest_forbidden',
-                esc_html__('You do not have permissions to access this endpoint.'),
-                array('status' => 401)
-            );
-        }
-        return true;
-    }
 }

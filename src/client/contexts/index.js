@@ -7,11 +7,11 @@ import TitleProvider from "./titleContext";
 const Context = ({ children }) => {
     return (
         <TitleProvider>
-            <PluginProvider>
-                <SettingsProvider>
+            <SettingsProvider>
+                <PluginProvider>
                     {children}
-                </SettingsProvider>
-            </PluginProvider>
+                </PluginProvider>
+            </SettingsProvider>
         </TitleProvider>
     )
 }

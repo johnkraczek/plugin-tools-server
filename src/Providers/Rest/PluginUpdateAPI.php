@@ -6,7 +6,7 @@ use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 use PluginToolsServer\Providers\Database\LicenseTable;
 use PluginToolsServer\Providers\Provider;
-use PluginToolsServer\Providers\Rest\PluginDownloadJob;
+use PluginToolsServer\Services\PluginDownloadJob;
 use PluginToolsServer\Providers\Rest\PTSRestProvider;
 
 class PluginUpdateAPI implements Provider

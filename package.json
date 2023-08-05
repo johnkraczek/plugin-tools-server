@@ -21,7 +21,8 @@
   "scripts": {
     "build": "bud build",
     "dev": "watch-run -p 'src/client/**/*' 'bud build'",
-    "test": "echo \"Error: no test specified\" && exit 0"
+    "test": "echo \"Error: no test specified\" && exit 0",
+    "clean": "bud clean"
   },
   "devDependencies": {
     "@playwright/test": "^1.26.0",
@@ -32,7 +33,8 @@
     "@roots/bud-tailwindcss": "6.13.1",
     "@roots/bud-wordpress-manifests": "6.13.1",
     "daisyui": "^3.2.1",
-    "npm": "^9.8.0"
+    "npm": "^9.8.0",
+    "livereload": "^0.9.3"
   },
   "dependencies": {
     "@headlessui/react": "^1.7.15",
