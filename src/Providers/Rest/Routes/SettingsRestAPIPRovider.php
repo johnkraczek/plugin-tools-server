@@ -1,32 +1,36 @@
 <?php
 
-namespace PluginToolsServer\Providers\Rest;
+namespace PluginToolsServer\Providers\Rest\Routes;
 use PluginToolsServer\Providers\Provider;
 use PluginToolsServer\Services\Crypto;
+use PluginToolsServer\Providers\Rest\Permission\RestPermission;
+
 
 class SettingsRestAPIPRovider implements Provider
 {
-
+    private $permission;
 
     public function register()
     {
+        $this->permission = new RestPermission();
+
         add_action('rest_api_init', function () {
             register_rest_route('pt-server/v1', '/settings', [
                 'methods' => 'GET',
                 'callback' => array( $this, 'get_settings_options' ),
-                'permission_callback' => array( PTSRestProvider::class, 'getPermissionCallback' )
+                'permission_callback' => array( $this->permission , 'getPermissionCallback' )
             ]);
 
             register_rest_route('pt-server/v1', '/settings', [
                 'methods' => 'POST',
                 'callback' => array( $this, 'post_settings_update' ),
-                'permission_callback' => array( PTSRestProvider::class, 'getPermissionCallback' )
+                'permission_callback' => array( $this->permission, 'getPermissionCallback' )
             ]);
 
             register_rest_route('pt-server/v1', '/settings', [
                 'methods' => 'DELETE',
                 'callback' => array( $this, 'delete_settings_options' ),
-                'permission_callback' => array( PTSRestProvider::class, 'getPermissionCallback' )
+                'permission_callback' => array( $this->permission, 'getPermissionCallback' )
             ]);
         });
     }

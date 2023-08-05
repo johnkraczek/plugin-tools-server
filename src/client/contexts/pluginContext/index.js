@@ -16,6 +16,10 @@ const verifyPluginData = (plugins) => {
         throw new Error("Plugins data must be an array");
     }
 
+    if (plugins.length === 0) {
+        return true;
+    }
+
     plugins.forEach((plugin, index) => {
         if (typeof plugin !== 'object') {
             throw new Error(`Plugin at index ${index} must be an object`);

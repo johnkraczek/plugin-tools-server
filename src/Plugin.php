@@ -7,7 +7,7 @@ use \PluginToolsServer\Providers\Views\AdminPageProvider;
 use \PluginToolsServer\Providers\Commands\CommandServiceProvider;
 use \PluginToolsServer\Providers\Routes\Composer;
 use \PluginToolsServer\Providers\Database\LicenseTable;
-use \PluginToolsServer\Providers\Rest\PTSRestProvider;
+use \PluginToolsServer\Providers\Rest\RestRouter;
 
 class Plugin implements Provider
 {
@@ -18,7 +18,7 @@ class Plugin implements Provider
             Composer::class,
             LicenseTable::class,
             CommandServiceProvider::class,
-            PTSRestProvider::class,
+            RestRouter::class,
         ];
 
         foreach ($Providers as $provider) {

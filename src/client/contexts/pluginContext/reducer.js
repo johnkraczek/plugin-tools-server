@@ -27,7 +27,7 @@ export const pluginsReducer = (state, action) => {
             });
 
         case "INITIALIZE_PLUGINS":
-            return [...action.plugins];
+            return Array.isArray(action.plugins) ? [...action.plugins] : [];
 
         default:
             return state;

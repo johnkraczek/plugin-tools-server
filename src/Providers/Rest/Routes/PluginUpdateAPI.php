@@ -1,13 +1,14 @@
 <?php
 
-namespace PluginToolsServer\Providers\Rest;
+namespace PluginToolsServer\Providers\Rest\Routes;
 
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 use PluginToolsServer\Providers\Database\LicenseTable;
 use PluginToolsServer\Providers\Provider;
 use PluginToolsServer\Services\PluginDownloadJob;
-use PluginToolsServer\Providers\Rest\PTSRestProvider;
+use PluginToolsServer\Providers\Rest\Permission\RestPermission;
+
 
 class PluginUpdateAPI implements Provider
 {
@@ -28,7 +29,7 @@ class PluginUpdateAPI implements Provider
             register_rest_route('pt-server/v1', '/update', [
                 'methods' => 'POST',
                 'callback' => array( $this, 'updateSinglePlugin' ),
-                'permission_callback' => array( PTSRestProvider::class, 'getPermissionCallback' )
+                'permission_callback' => array( new RestPermission, 'getPermissionCallback' )
             ]);
         });
 

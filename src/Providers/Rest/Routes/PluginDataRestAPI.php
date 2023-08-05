@@ -1,12 +1,13 @@
 <?php
 
-namespace PluginToolsServer\Providers\Rest;
+namespace PluginToolsServer\Providers\Rest\Routes;
 
 use PluginToolsServer\Providers\Provider;
-use PluginToolsServer\Providers\Rest\PTSRestProvider;
 use PluginToolsServer\Services\BitbucketManager;
+use PluginToolsServer\Providers\Rest\Permission\RestPermission;
 
-class PluginDataRestApi implements Provider
+
+class PluginDataRestAPI implements Provider
 {
     protected $bitbucketManager;
 
@@ -16,7 +17,7 @@ class PluginDataRestApi implements Provider
             register_rest_route('pt-server/v1', '/plugins', [
                 'methods' => 'GET',
                 'callback' => array( $this, 'fetchAllPluginsMeta' ),
-                'permission_callback' => array( PTSRestProvider::class, 'getPermissionCallback' )
+                'permission_callback' => array( new RestPermission, 'getPermissionCallback' )
             ]);
         });
     }
@@ -41,6 +42,6 @@ class PluginDataRestApi implements Provider
         }
     
         // Return the data as a JSON-encoded string
-        return new WP_REST_Response($formattedPluginData, 200);
+        return new \WP_REST_Response($formattedPluginData, 200);
     }
 }

@@ -1,6 +1,7 @@
 <?php
 
 namespace PluginToolsServer\Providers\Views;
+
 use PluginToolsServer\Providers\Provider;
 
 class AdminPageProvider implements Provider
@@ -37,21 +38,35 @@ class AdminPageProvider implements Provider
             );
         }
         foreach ($entrypoints->client->css as $css) {
+
+            if(preg_match('/client\.([a-z0-9]*?)\./', $css, $matches)) {
+                $hash = $matches[1];
+                // Now the $hash variable contains the hash
+            } else {
+                $hash = false;
+            }
+
             wp_enqueue_style(
-                'adminPageCss',
+                'plugin-tools-server',
                 YDTB_PTOOLS_SERVER_URL."dist/{$css}",
                 array(),
-                false,
+                $hash,
                 'all',
             );
         }
 
-        wp_localize_script('js/client.js', 'pts', [
-            'rest' => esc_url_raw(rest_url())."pt-server/v1/",
-            'nonce' => wp_create_nonce('wp_rest'),
-            'root' => esc_url_raw(YDTB_PTOOLS_SERVER_URL)
-        ]);
+        foreach ($entrypoints->client->js as $js) {
+            if ($js === "js/client.js" || preg_match("/^js\/client\.[a-zA-Z0-9]+\.js$/", $js)) {
+                wp_localize_script($js, 'pts', [
+                    'rest' => esc_url_raw(rest_url())."pt-server/v1/",
+                    'nonce' => wp_create_nonce('wp_rest'),
+                    'root' => esc_url_raw(YDTB_PTOOLS_SERVER_URL),
+                    "cssHash" => $hash
+                ]);
+            }
+        }
     }
+
     public function settings_page()
     {
         echo('<div id="ydtb-plugin-tools-server-root" class="h-full" style="margin-right: 16px; margin-top: 10px;"></div>');

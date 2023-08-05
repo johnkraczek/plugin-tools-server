@@ -1,6 +1,6 @@
 <?php
 
-namespace PluginToolsServer\Providers\Rest;
+namespace PluginToolsServer\Services;
 
 use PluginToolsServer\Services\BitbucketManager;
 
