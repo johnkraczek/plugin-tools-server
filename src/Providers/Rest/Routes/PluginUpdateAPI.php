@@ -275,6 +275,10 @@ class PluginUpdateAPI implements Provider
         
         $bitbucket = new BitbucketManager(true);
 
+        if (!$this->bitbucketManager){
+            throw new \Exception('Bitbucket Settings not configured.');
+        }
+
         if (!file_exists($data['destination_path'])) {
             throw new \Exception('File does not exist.');
         }
