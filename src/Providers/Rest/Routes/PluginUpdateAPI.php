@@ -275,7 +275,7 @@ class PluginUpdateAPI implements Provider
         
         $bitbucket = new BitbucketManager(true);
 
-        if (!$this->bitbucketManager){
+        if (!$bitbucket->initalized){
             throw new \Exception('Bitbucket Settings not configured.');
         }
 
