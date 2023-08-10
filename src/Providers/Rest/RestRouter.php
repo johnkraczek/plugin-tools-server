@@ -5,7 +5,7 @@ namespace PluginToolsServer\Providers\Rest;
 use \PluginToolsServer\Providers\Provider;
 use \PluginToolsServer\Providers\Rest\Routes\SettingsRestAPIPRovider;
 use \PluginToolsServer\Providers\Rest\Routes\PluginUpdateAPI;
-use \PluginToolsServer\Providers\Rest\Routes\PluginDataRestApi;
+use \PluginToolsServer\Providers\Rest\Routes\PluginDataRestAPI;
 
 class RestRouter implements Provider
 {
