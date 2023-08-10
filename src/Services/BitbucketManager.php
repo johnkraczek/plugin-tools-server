@@ -19,6 +19,10 @@ class BitbucketManager
     {
         $settings = get_option(YDTB_PTOOLS_OPTIONS_SLUG);
 
+        if (!$settings){
+            return false;
+        }
+
         $this->username = $settings['bitbucket_username'];
         $this->password = Crypto::Decrypt($settings['bitbucket_password']);
         $this->workspace = $settings['bitbucket_workspace']; // workspace slug from bitbucket

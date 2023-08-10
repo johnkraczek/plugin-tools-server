@@ -17,24 +17,32 @@ class PTSCommands extends \WP_CLI_Command
 
     public function fetchAll()
     {
-        $this->bitbucketManager->cloneOrFetchRepositories();
+        if ($this->bitbucketManager){
+            $this->bitbucketManager->cloneOrFetchRepositories();
+        }
     }
 
     public function getOptions()
     {
+        if ($this->bitbucketManager){
         echo "Bitbucket_User". $this->bitbucketManager->getUser() ."\n";
         echo "Bitbucket_Workspace". $this->bitbucketManager->getWorkspace() ."\n";
         //echo "Bitbucket_AppPass: ". $this->bitbucketManager->getPassword() . "\n";
+        }
     }
 
     public function removeRepos(){
+        if ($this->bitbucketManager){
         \WP_CLI::confirm( "Are you sure you want to remove the repos?" );
         RimRaf::rrmdir($this->bitbucketManager->getTargetDir());
+        }
     }
 
     public function generateComposer(){
+        if ($this->bitbucketManager){
         $packages = $this->bitbucketManager->cloneOrFetchRepositories();
         $this->bitbucketManager->generateComposerPackages($packages);
+        }
     }
 
     public function makeKey( ){

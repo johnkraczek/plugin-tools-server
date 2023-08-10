@@ -24,6 +24,10 @@ class PluginDownloadJob extends \WP_Async_Request {
             $name= $_POST['plugin_name'];
             $version= $_POST['plugin_version'];
 
+            if (!$this->bitbucketManager){
+                throw new \Exception('Bitbucket Settings not configured.');
+            }
+
             $this->bitbucketManager->handlePluginUpdate($url, $slug, $name, $version);
         }
 }
