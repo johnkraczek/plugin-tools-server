@@ -13,8 +13,9 @@ class BitbucketManager
     private $password;
     private $workspace;
     public $targetDir;
+    private $silent;
 
-    public function __construct()
+    public function __construct($silent = false)
     {
         $settings = get_option(YDTB_PTOOLS_OPTIONS_SLUG);
 
@@ -22,8 +23,8 @@ class BitbucketManager
         $this->password = Crypto::Decrypt($settings['bitbucket_password']);
         $this->workspace = $settings['bitbucket_workspace']; // workspace slug from bitbucket
         $this->targetDir = wp_upload_dir()['basedir']. '/plugin-tools-server';
-
-    }
+        $this->silent = $silent;
+    }   
 
     public function getUser()
     {
@@ -46,7 +47,7 @@ class BitbucketManager
         return $this->targetDir;
     }
 
-    public function cloneOrFetchRepositories($silent = false)
+    public function cloneOrFetchRepositories()
     {
         $packages = [];
         $fields = 'size,pagelen,page,values.full_name,values.name,values.slug,values.links.clone,values.links.html';
@@ -62,11 +63,11 @@ class BitbucketManager
         $this->setGitConfig();
     
         while ($nextPage) {
-            $this->logOutput("Fetching Repositories in " . $this->workspace . "...\n", $silent);
+            $this->logOutput("Fetching Repositories in " . $this->workspace . "...\n");
             $response = file_get_contents("https://api.bitbucket.org/2.0/repositories/".$this->workspace."?pagelen=100&page=$page&fields=$fields", false, $context);
             $data = json_decode($response, true);
     
-            $this->logOutput("Found " . $data['size'] . " repositories.\n", $silent);
+            $this->logOutput("Found " . $data['size'] . " repositories.\n");
     
             foreach ($data['values'] as $repository) {
                 $slug = $this->validateSlug($repository['slug']);
@@ -75,7 +76,7 @@ class BitbucketManager
                 $localWorkTree = $localWorkDir  . '/' . $slug;
     
                 if (!is_dir($localWorkDir)) {
-                    $this->logOutput("Cloning " . $repository['name'] . "...\n", $silent);
+                    $this->logOutput("Cloning " . $repository['name'] . "...\n");
                     mkdir($localWorkTree, 0700, true);
                     $process = new Process(['git', 'clone', $repository['links']['clone'][0]['href'], $localWorkTree], null, ['GIT_USERNAME' => $this->username, 'GIT_PASSWORD' => $this->password]);
                     $process->run();
@@ -83,7 +84,7 @@ class BitbucketManager
                     $process->run();
                     copy($localWorkTree . '/.git', $localGitDir.'/.gitBackup');
                 } else {
-                    $this->logOutput("Pulling " . $repository['name'] . "...\n", $silent);
+                    $this->logOutput("Pulling " . $repository['name'] . "...\n");
                     $process = new Process(['git', 'pull', '--all'], $localWorkTree, ['username' => $this->username, 'password' => $this->password]);
                 }
                 $packages[] = array("path"=>$localWorkTree, "full_name"=>$repository['full_name']);
@@ -93,38 +94,43 @@ class BitbucketManager
             $page++;
         }
     
-        $this->logOutput("Done.\n", $silent);
+        $this->logOutput("Done.\n");
         return $packages;
     }
     
-    private function logOutput($message, $silent = false)
+    private function logOutput($message)
     {
-        if (!$silent) {
+        if (!$this->silent) {
             echo $message;
         }
     }
 
-    public function generateComposerPackages($packages, $silent = false)
+    public function generateComposerPackages($packages)
     {
         $packageoutput = new \stdClass();
         $packageoutput->packages = new \stdClass();
         $count = 1;
+        $this->logOutput("Generating packages.json...\n");
+
+        // clear out the meta data so that if any packages have been removed, they will be removed from the meta data.
+        update_option('pts_plugin_list_meta', []);
+
         foreach($packages as $package) {
-            if (!$silent) {
-                echo "Count: " . $count . " Package: " . $package['full_name'] . "\n";
+            if (!$this->silent) {
+                $this->logOutput("Count: " . $count . " Package: " . $package['full_name'] . "\n");
             }
     
-            $plugin = $this->fetchPluginData($package, $silent);
+            $plugin = $this->fetchPluginData($package);
             $packageoutput->packages->{$plugin['slug']} = $plugin[$plugin['slug']];
             $count ++;
         }
-        if (!$silent) {
-            echo "Writing packages.json...\n";
+        if (!$this->silent) {
+            $this->logOutput("Writing packages.json...\n");
         }
         file_put_contents($this->targetDir."/packages.json", json_encode($packageoutput));
     }
     
-    private function fetchPluginData($package, $silent = false)
+    private function fetchPluginData($package)
     {
         $plugin = [];
         $fullName = $package['full_name'];
@@ -132,7 +138,7 @@ class BitbucketManager
     
         $git = new GitRepository($path);
     
-        $this->logOutput("Generating... " . $package['full_name'] ."\n", $silent);
+        $this->logOutput("Generating... " . $package['full_name'] ."\n");
     
         $remotes = $git->branch()->getNames();
         $tags = $git->tag()->getNames();
@@ -143,7 +149,7 @@ class BitbucketManager
             return false;
         }
     
-        $this->generatePluginMetaData($tags, $path, $composerSlug, $silent);
+        $this->generatePluginMetaData($tags, $path, $composerSlug);
     
         foreach($tags as $tag) {
             $plugin[$composerSlug][$tag] = [
@@ -167,7 +173,7 @@ class BitbucketManager
     
             $branchHash = $this->getGitBranchHash($path, $branch);
     
-            $this->logOutput("Branch: " . $branch . " hash: " . $branchHash ."\n", $silent);
+            $this->logOutput("Branch: " . $branch . " hash: " . $branchHash ."\n");
     
             $devBranch = 'dev-' . $branch;
             $plugin[$composerSlug][$devBranch] = [
@@ -195,11 +201,11 @@ class BitbucketManager
     private function generatePluginMetaData($tags, $path, $composerSlug)
     {
 
-        echo "Generating Plugin Meta Data... " . $composerSlug . "\n";
-        echo print_r($tags, true) . "\n";
+        $this->logOutput( "Generating Plugin Meta Data... " . $composerSlug . "\n");
+        $this->logOutput( print_r($tags, true) . "\n");
 
         $count = count($tags);
-        if ($count === 0 ) {
+        if ($count === 0) {
             $currentTag = 'master';
         } elseif ($count == 1) {
             $currentTag = $tags[0];
@@ -207,7 +213,7 @@ class BitbucketManager
             usort($tags, 'version_compare');
             $currentTag = end($tags);
         }
-        echo "Current Tag: " . $currentTag . "\n";
+        $this->logOutput( "Current Tag: " . $currentTag . "\n");
 
         $process = new Process(['git', 'show', '-s', '--format=%ci', "$currentTag^{commit}"], $path);
         $process->run();
@@ -220,11 +226,11 @@ class BitbucketManager
         // Return the output, trimming any whitespace at the end
         $lastPushed = trim($process->getOutput());
 
-        echo "Last Pushed: " . $lastPushed . "\n";
+        $this->logOutput( "Last Pushed: " . $lastPushed . "\n");
 
         $pluginName = $this->getPluginName($path);
 
-        echo "Plugin Name: " . $pluginName . "\n";
+        $this->logOutput( "Plugin Name: " . $pluginName . "\n");
 
         $plugin['pts_meta'] = array(
             'name' => $pluginName,
@@ -246,18 +252,18 @@ class BitbucketManager
     
     private function getComposerPackageDetails($filePath)
     {
-        echo "filePath... " . $filePath . "\n";
+        $this->logOutput( "filePath... " . $filePath . "\n");
 
         if (($json = @file_get_contents($filePath . '/composer.json')) === false) {
             $error = error_get_last();
-            echo "Unable to get package slug... " . $error['message'];
+            $this->logOutput( "Unable to get package slug... " . $error['message']);
             return false;
         }
         
         // Decode the composer file.
         $json_data = json_decode($json, true);
 
-        echo "Slug Name... " . $json_data['name'] . "\n";
+        $this->logOutput( "Slug Name... " . $json_data['name'] . "\n");
 
         $composerData = [
             'slug' => $json_data['name'],
@@ -313,33 +319,42 @@ class BitbucketManager
         return $slug;
     }
 
-    public function handlePluginUpdate($url, $slug, $name, $version)
+    public function handlePluginUpdate($input, $composerSlug, $name, $version)
     {
-        $temp_file_path = $this->targetDir."/tempzip.zip"; // Create a temporary file
-        $response = wp_remote_get($url, array(
-            'timeout'  => 300,
-            'stream'   => true,  // Stream the response to the temporary file
-            'filename' => $temp_file_path,
-        ));
+        $temp_file_path = $this->targetDir . "/tempzip.zip"; // Create a temporary file
+
+        // Check if the input is a valid URL
+        if (filter_var($input, FILTER_VALIDATE_URL)) {
+            // Fetching the plugin from the provided URL
+            $response = wp_remote_get($input, array(
+                'timeout'  => 300,
+                'stream'   => true,  // Stream the response to the temporary file
+                'filename' => $temp_file_path,
+            ));
     
-        if (is_wp_error($response)) {
-            unlink($temp_file_path);  // Remove the temporary file
-            throw new \Exception("Error fetching plugin from $url: " . $response->get_error_message());
-        }
-    
-        if (200 != wp_remote_retrieve_response_code($response)) {
-            unlink($temp_file_path);  // Remove the temporary file
-            throw new \Exception("Unexpected response fetching plugin from $url: " . wp_remote_retrieve_response_message($response));
+            if (is_wp_error($response)) {
+                unlink($temp_file_path);  // Remove the temporary file
+                throw new \Exception("Error fetching plugin from $input: " . $response->get_error_message());
+            }
+        } elseif (file_exists($input)) {
+            // Handle the local file path
+            if (!copy($input, $temp_file_path)) {
+                throw new \Exception("Error copying local file from $input to $temp_file_path");
+            }
+            // Remove the original file after successful copy
+            unlink($input);
+        } else {
+            throw new \Exception("The input is neither a valid URL nor a valid local file path.");
         }
 
         $pluginSlug = $this->getFolderNameFromZip($temp_file_path);
 
-        if (!$this->isPackageSameAsFolderName($slug, $pluginSlug)) {
+        if (!$this->isPackageSameAsFolderName($composerSlug, $pluginSlug)) {
             unlink($temp_file_path);  // Remove the temporary file
             //@todo: When this happens we want to push a notification into the UI. There are several different parts of the plugin that do background processing. Having a notification system would be nice. then when the user comes into the UI they can see different things that have happened, such as when a plugin update has come in, how it went etc. Right now I'm just checking the logs to see what happened.
-            error_log("Plugin folder name does not match package name");
-            error_log(print_r($slug, true));
-            error_log(print_r($pluginSlug, true));
+            $this->logOutput("Plugin folder name does not match package name");
+            $this->logOutput(print_r($composerSlug, true));
+            $this->logOutput(print_r($pluginSlug, true));
             throw new \Exception("Plugin folder name does not match package name");
         }
 
@@ -355,8 +370,8 @@ class BitbucketManager
             $this->setGitConfig();
 
             // we need to get the long name of the plugin.
-            $longName = $this->getPluginLongNameFromZip($temp_file_path, $pluginSlug);
-            error_log("Long Name: " . $longName);
+            $longName = $this->getPluginName($temp_file_path);
+            $this->logOutput("Long Name: " . $longName);
 
             // setup the new pluign.
             mkdir($localWorkTree, 0700, true);
@@ -364,19 +379,24 @@ class BitbucketManager
             $composerJsonContent = $this->getComposerJson($temp_file_path, $pluginSlug);
 
             if ($composerJsonContent !== null) {
-                $fileWriteResult = file_put_contents("$localWorkTree/composer.json", $composerJsonContent);
+                
+                $composerData = json_decode($composerJsonContent, true);
+
+                if (isset($composerData['name'])) {
+                    // Replace the 'name' property with the new value.
+                    $composerData['name'] = $composerSlug;
+                }
+            
+                $fileWriteResult = file_put_contents("$localWorkTree/composer.json", json_encode($composerData));
 
                 if ($fileWriteResult === false) {
-                    // echo 'Failed to write to the file';
-                    error_log("Failed to write composer to the file");
+                    $this->logOutput("Failed to write composer to the file");
                 } else {
-                    // echo 'File written successfully';
-                    error_log(" composer File written successfully");
+                    $this->logOutput(" composer File written successfully");
                 }
             } else {
-                // echo 'composer.json file does not exist in the zip';
-                error_log("composer.json file does not exist in the zip");
-                $this->create_composer_json($slug, $name, 'wordpress-plugin', $localWorkTree);
+                $this->logOutput("composer.json file does not exist in the zip");
+                $this->create_composer_json($composerSlug, $name, 'wordpress-plugin', $localWorkTree);
             }
 
             // next we create the file folder.
@@ -390,36 +410,36 @@ class BitbucketManager
             // next we need to make a repo at bitbucket that we can push this to.
             $gitHref = $this->createBitbucketRepo($pluginSlug, $longName);
 
-            error_log("Remote URL: " . $gitHref);
+            $this->logOutput("Remote URL: " . $gitHref);
 
 
             $process = new Process(['git', 'remote', 'add', 'origin', $gitHref], "$localWorkTree/");
             $process->run();
-            error_log("done add origin");
-            error_log(print_r($process->getOutput(), true));
-            error_log(print_r($process->getErrorOutput(), true));
+            $this->logOutput("done add origin");
+            $this->logOutput(print_r($process->getOutput(), true));
+            $this->logOutput(print_r($process->getErrorOutput(), true));
 
 
             $process = new Process(['git', 'push', '--set-upstream', 'origin', 'master'], "$localWorkTree/", ['GIT_USERNAME' => $this->username, 'GIT_PASSWORD' => $this->password]);
             $process->run();
-            error_log("set upstream output:");
-            error_log(print_r($process->getOutput(), true));
-            error_log(print_r($process->getErrorOutput(), true));
+            $this->logOutput("set upstream output:");
+            $this->logOutput(print_r($process->getOutput(), true));
+            $this->logOutput(print_r($process->getErrorOutput(), true));
             //git push -u origin master
             
             $process = new Process(['git', 'push', '-u', 'origin', 'master'], "$localWorkTree/", ['GIT_USERNAME' => $this->username, 'GIT_PASSWORD' => $this->password]);
             $process->run();
-            error_log("push output");
-            error_log(print_r($process->getOutput(), true));
-            error_log(print_r($process->getErrorOutput(), true));
+            $this->logOutput("push output");
+            $this->logOutput(print_r($process->getOutput(), true));
+            $this->logOutput(print_r($process->getErrorOutput(), true));
 
             mkdir($localGitDir, 0700, true);
 
             $process = new Process(['git', 'init', '--separate-git-dir', "$localGitDir/"], "$localWorkTree/");
             $process->run();
-            error_log("Separate Git Dir:");
-            error_log(print_r($process->getOutput(), true));
-            error_log(print_r($process->getErrorOutput(), true));
+            $this->logOutput("Separate Git Dir:");
+            $this->logOutput(print_r($process->getOutput(), true));
+            $this->logOutput(print_r($process->getErrorOutput(), true));
             // keep the .git file somewhere else so that we are able to copy it back later.
             
             copy($localWorkTree . '/.git', $localGitDir.'/.gitBackup');
@@ -430,7 +450,7 @@ class BitbucketManager
         $destination = "$pluginWorkingDir/composer.json";
         
         if (!copy($source, $destination)) {
-            echo "failed to copy $source...\n";
+            $this->logOutput( "failed to copy $source...\n");
         }
 
         // next we remove the previous plugin folder.
@@ -444,9 +464,9 @@ class BitbucketManager
         if ($res === true) {
             $zip->extractTo("$pluginWorkingDir");
             $zip->close();
-            echo 'extraction successful!';
+            $this->logOutput( 'extraction successful!');
         } else {
-            echo 'failed to open zip!';
+            $this->logOutput( 'failed to open zip!');
         }
 
         $source  = "$pluginWorkingDir/composer.json";
@@ -454,7 +474,7 @@ class BitbucketManager
 
         // next we put back the composer.json file.
         if (!copy($source, $destination)) {
-            echo "failed to copy $source...\n";
+            $this->logOutput( "failed to copy $source...\n");
         }
 
         // next we copy the .git file back into the plugin folder.
@@ -462,7 +482,7 @@ class BitbucketManager
         $destination =  "$localWorkTree/.git";
         
         if (!copy($source, $destination)) {
-            echo "failed to copy $source...\n";
+            $this->logOutput( "failed to copy $source...\n");
         }
 
         // next we remove the temp zip file.
@@ -471,12 +491,12 @@ class BitbucketManager
         }
 
         // get the plugin version from the composer.json file.
-        $pluginVersion = $this->get_plugin_version("$localWorkTree/$pluginSlug.php");
+        $pluginVersion = $this->get_plugin_version("$localWorkTree");
 
         if ($pluginVersion != $version) {
-            error_log("Plugin version does not match package version");
-            error_log(print_r($pluginVersion, true));
-            error_log(print_r($version, true));
+            $this->logOutput("Plugin version does not match package version");
+            $this->logOutput(print_r($pluginVersion, true));
+            $this->logOutput(print_r($version, true));
             throw new \Exception("Plugin version does not match package version");
         }
         
@@ -492,15 +512,15 @@ class BitbucketManager
 
         $process = new Process(['git', 'tag', $version], "$localWorkTree/");
         $process->run();
-        error_log("Git Tag");
-        error_log(print_r($process->getOutput(), true));
-        error_log(print_r($process->getErrorOutput(), true));
+        $this->logOutput("Git Tag");
+        $this->logOutput(print_r($process->getOutput(), true));
+        $this->logOutput(print_r($process->getErrorOutput(), true));
 
         $process = new Process(['git', 'push', 'origin', $version], "$localWorkTree/", ['GIT_USERNAME' => $this->username, 'GIT_PASSWORD' => $this->password]);
         $process->run();
-        error_log("Push Tag");
-        error_log(print_r($process->getOutput(), true));
-        error_log(print_r($process->getErrorOutput(), true));
+        $this->logOutput("Push Tag");
+        $this->logOutput(print_r($process->getOutput(), true));
+        $this->logOutput(print_r($process->getErrorOutput(), true));
     }
 
     private function getFolderNameFromZip($path)
@@ -525,20 +545,26 @@ class BitbucketManager
 
     private function get_plugin_version($plugin_path)
     {
-        if(!function_exists('get_plugin_data')) {
-            include_once(ABSPATH . 'wp-admin/includes/plugin.php');
+        //$pluginName = $this->extractPluginData(file_get_contents($file), "Plugin Name:");
+
+        foreach (glob($plugin_path.'/*.php') as $file) {
+            $version = $this->extractPluginData(file_get_contents($file), "Version: ");
+            if ($version) {
+                return $version;
+            }
         }
-    
-        $plugin_data = get_plugin_data($plugin_path);
-        $plugin_version = $plugin_data['Version'];
-    
-        return $plugin_version;
+        return false;
     }
 
-    private function isPackageSameAsFolderName($slug, $folderName)
+    private function isPackageSameAsFolderName($composerSlug, $folderName)
     {
+
+        if ($composerSlug == $folderName) {
+            return true;
+        }
+
         // Split the slug into parts
-        $parts = explode('/', $slug);
+        $parts = explode('/', $composerSlug);
         
         // If slug is not in 'vendor/package' format, return false
         if (count($parts) < 2) {
@@ -552,10 +578,10 @@ class BitbucketManager
         return $packageName == $folderName;
     }
 
-    public function create_composer_json($slug, $name, $type, $path)
+    public function create_composer_json($composerSlug, $name, $type, $path)
     {
         $data = array(
-            "name" => $slug,
+            "name" => $composerSlug,
             "description" => "A private repo tracking the $name plugin.",
             "type" => $type
         );
@@ -611,7 +637,7 @@ class BitbucketManager
         $auth = base64_encode("$username:$password");
 
         // @TODO we need to make sure that the project exists. for now i just manally created the project.
-        error_log("auth: " . $auth);
+        $this->logOutput("auth: " . $auth);
         $data = array(
             'name' => $longName,
             'full_name' => $longName,
@@ -658,42 +684,49 @@ class BitbucketManager
         
     }
     
-    private function getPluginLongNameFromZip($zipFilePath, $slug)
+    private function getPluginName($path)
     {
-        $zip = new \ZipArchive;
-        $res = $zip->open($zipFilePath);
-
-        if ($res === true) {
-            $fileContent = $zip->getFromName($slug . '/' . $slug . '.php');
-
-            if ($fileContent !== false) {
-                if (preg_match('/\* Plugin Name:\s*(.+)/', $fileContent, $matches)) {
-                    return $matches[1];
-                } else {
-                    throw new \Exception("Cannot find the Plugin Name in the ZIP file.");
-                }
-            } else {
-                throw new \Exception("Cannot find the file $slug/$slug.php in the ZIP file.");
+        // Check if the path is a ZIP file
+        if (pathinfo($path, PATHINFO_EXTENSION) == 'zip') {
+            $zip = new \ZipArchive;
+            $res = $zip->open($path);
+            
+            if ($res !== true) {
+                throw new \Exception("Cannot open the ZIP file.");
             }
-
+    
+            // Go through each file in the ZIP archive
+            for ($i = 0; $i < $zip->numFiles; $i++) {
+                $filename = $zip->getNameIndex($i);
+                // If the file is in the root of the ZIP and has a .php extension, check its content for the plugin name
+                if (substr_count($filename, '/') == 1 && pathinfo($filename, PATHINFO_EXTENSION) == 'php') {
+                    $pluginName = $this->extractPluginData($zip->getFromIndex($i), "Plugin Name: ");
+                    if ($pluginName) {
+                        $zip->close();
+                        return $pluginName;
+                    }
+                }
+            }
             $zip->close();
         } else {
-            throw new \Exception("Cannot open the ZIP file.");
-        }
-    }
-            
-    private function getPluginName($pluginDir)
-    {
-        // Scan php files in plugin directory
-        foreach (glob($pluginDir.'/*.php') as $file) {
-            $fileContent = file_get_contents($file);
-            if(preg_match('/\* Plugin Name:\s*(.+)/', $fileContent, $matches)) {
-                // return plugin name if found
-                return trim($matches[1]);
+            // If not a ZIP file, then consider it as a directory and read the PHP files directly
+            foreach (glob($path.'/*.php') as $file) {
+                $pluginName = $this->extractPluginData(file_get_contents($file), "Plugin Name: ");
+                if ($pluginName) {
+                    return $pluginName;
+                }
             }
         }
     
-        // return false if no plugin name found
+        // Return false if no plugin name is found
+        return false;
+    }
+    
+    private function extractPluginData($fileContent, $matchedString)
+    {
+        if (preg_match('/\* '.$matchedString.'\s*(.+)/', $fileContent, $matches)) {
+            return trim($matches[1]);
+        }
         return false;
     }
 

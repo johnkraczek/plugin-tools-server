@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { useTitle } from "../../contexts/titleContext"
 import Box from '../../components/box';
 import PluginTable from '../../components/table/index.js';
+import ModalPopup from '../../components/fileUploadDialog/index.js';
 
 const PluginList = () => {
 
@@ -21,14 +22,7 @@ const PluginList = () => {
                             This is a list of all plugins tracked by YDTB. You can add a new plugin by clicking the button.
                         </p>
                     </div>
-                    <div className="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
-                        <button
-                            type="button"
-                            className="block rounded-md bg-indigo-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-                        >
-                            Add Plugin
-                        </button>
-                    </div>
+                    <ModalPopup />
                 </div>
             </div>
             <PluginTable />
