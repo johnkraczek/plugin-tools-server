@@ -7,6 +7,7 @@ use \PluginToolsServer\Providers\Rest\Routes\SettingsRestAPIPRovider;
 use \PluginToolsServer\Providers\Rest\Routes\PluginUpdateAPI;
 use \PluginToolsServer\Providers\Rest\Routes\PluginDataRestAPI;
 
+
 class RestRouter implements Provider
 {
     public function register()
