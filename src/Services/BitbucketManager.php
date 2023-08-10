@@ -14,20 +14,25 @@ class BitbucketManager
     private $workspace;
     public $targetDir;
     private $silent;
+    public $initalized;
 
     public function __construct($silent = false)
     {
         $settings = get_option(YDTB_PTOOLS_OPTIONS_SLUG);
 
         if (!$settings){
+            //$this->logOutput("Unable to get the settings \n");
+            $this->initalized = false;
             return false;
         }
 
+        $this->initalized = true;
         $this->username = $settings['bitbucket_username'];
         $this->password = Crypto::Decrypt($settings['bitbucket_password']);
         $this->workspace = $settings['bitbucket_workspace']; // workspace slug from bitbucket
         $this->targetDir = wp_upload_dir()['basedir']. '/plugin-tools-server';
         $this->silent = $silent;
+
     }   
 
     public function getUser()
@@ -65,12 +70,18 @@ class BitbucketManager
         $nextPage = true;
         $page = 1;
         $this->setGitConfig();
+
+        if ($this->workspace == "" || $this->workspace == null){
+         throw new \Exception('Invalid Workspace: ' . $this->workspace);
+        }
     
         while ($nextPage) {
             $this->logOutput("Fetching Repositories in " . $this->workspace . "...\n");
             $response = file_get_contents("https://api.bitbucket.org/2.0/repositories/".$this->workspace."?pagelen=100&page=$page&fields=$fields", false, $context);
             $data = json_decode($response, true);
-    
+            
+            $this->logOutput(print_r($data, true));
+
             $this->logOutput("Found " . $data['size'] . " repositories.\n");
     
             foreach ($data['values'] as $repository) {
@@ -289,6 +300,7 @@ class BitbucketManager
         // but we need a repo to call git global config commands in.
         // We make a bare repo, set the config, and then ?delete? the repo.
         $bareGit = $this->targetDir . '/git';
+        $this->logOutput($bareGit);
 
         mkdir($bareGit, 0700, true);
 

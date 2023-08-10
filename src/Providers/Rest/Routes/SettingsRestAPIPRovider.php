@@ -40,6 +40,10 @@ class SettingsRestAPIPRovider implements Provider
     {
         $settings = get_option(YDTB_PTOOLS_OPTIONS_SLUG);
 
+        if (empty($settings)){
+            return new \WP_REST_Response(array('message'=>'No settings found.'), 200);
+        }
+        
         $password_decrypted = Crypto::Decrypt($settings['bitbucket_password']);
 
         $plugin_tools_options = array(
@@ -66,16 +70,15 @@ class SettingsRestAPIPRovider implements Provider
                 $updated_options['bitbucket_password']= $settings['bitbucket_password'];
             }
 
-            $updated_options['bitbucket_username']= filter_var($data['bitbucket_username'], FILTER_SANITIZE_STRING);
-            $updated_options['bitbucket_workspace']= filter_var($data['bitbucket_workspace'], FILTER_SANITIZE_STRING);
+            $updated_options['bitbucket_username']= filter_var($data['bitbucket_username'], FILTER_UNSAFE_RAW);
+            $updated_options['bitbucket_workspace']= filter_var($data['bitbucket_workspace'], FILTER_UNSAFE_RAW);
 
             update_option(YDTB_PTOOLS_OPTIONS_SLUG, $updated_options);
 
             // return our response.
             return new \WP_REST_Response(
                 array(
-                'message'=>'Settings Stored',
-                'options'=>get_option(YDTB_PTOOLS_OPTIONS_SLUG)),
+                'message'=>'Settings Stored'),
                 200
             );
         }
