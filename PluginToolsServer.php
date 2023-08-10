@@ -24,4 +24,5 @@ define("YDTB_PTOOLS_OPTIONS_SLUG", "pts_settings");
 $YDTBServerPlugin = new \PluginToolsServer\Plugin;
 $YDTBServerPlugin->register();
 
+// Boot the plugin
 add_action('init', [$YDTBServerPlugin, 'boot']);
