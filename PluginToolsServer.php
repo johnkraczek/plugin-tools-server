@@ -3,7 +3,7 @@
  * Plugin Name:     Plugin Tools Server By YDTB
  * Plugin URI:      https://github.com/roots/clover
  * Description:     Plugin Tools Server By YDTB
- * Version:         0.0.21
+ * Version:         0.0.22
  * Author:          John Kraczek
  * Author URI:      https://github.com/johnkraczek
  * License:         GPLv2 or later
