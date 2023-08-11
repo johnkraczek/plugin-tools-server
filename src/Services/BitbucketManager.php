@@ -20,7 +20,7 @@ class BitbucketManager
     {
         $settings = get_option(YDTB_PTOOLS_OPTIONS_SLUG);
 
-        if (!$settings){
+        if (!$settings) {
             //$this->logOutput("Unable to get the settings \n");
             $this->initalized = false;
             return false;
@@ -33,7 +33,7 @@ class BitbucketManager
         $this->targetDir = wp_upload_dir()['basedir']. '/plugin-tools-server';
         $this->silent = $silent;
 
-    }   
+    }
 
     public function getUser()
     {
@@ -71,8 +71,8 @@ class BitbucketManager
         $page = 1;
         $this->setGitConfig();
 
-        if ($this->workspace == "" || $this->workspace == null){
-         throw new \Exception('Invalid Workspace: ' . $this->workspace);
+        if ($this->workspace == "" || $this->workspace == null) {
+            throw new \Exception('Invalid Workspace: ' . $this->workspace);
         }
     
         while ($nextPage) {
@@ -216,8 +216,8 @@ class BitbucketManager
     private function generatePluginMetaData($tags, $path, $composerSlug)
     {
 
-        $this->logOutput( "Generating Plugin Meta Data... " . $composerSlug . "\n");
-        $this->logOutput( print_r($tags, true) . "\n");
+        $this->logOutput("Generating Plugin Meta Data... " . $composerSlug . "\n");
+        $this->logOutput(print_r($tags, true) . "\n");
 
         $count = count($tags);
         if ($count === 0) {
@@ -228,7 +228,7 @@ class BitbucketManager
             usort($tags, 'version_compare');
             $currentTag = end($tags);
         }
-        $this->logOutput( "Current Tag: " . $currentTag . "\n");
+        $this->logOutput("Current Tag: " . $currentTag . "\n");
 
         $process = new Process(['git', 'show', '-s', '--format=%ci', "$currentTag^{commit}"], $path);
         $process->run();
@@ -241,11 +241,11 @@ class BitbucketManager
         // Return the output, trimming any whitespace at the end
         $lastPushed = trim($process->getOutput());
 
-        $this->logOutput( "Last Pushed: " . $lastPushed . "\n");
+        $this->logOutput("Last Pushed: " . $lastPushed . "\n");
 
         $pluginName = $this->getPluginName($path);
 
-        $this->logOutput( "Plugin Name: " . $pluginName . "\n");
+        $this->logOutput("Plugin Name: " . $pluginName . "\n");
 
         $plugin['pts_meta'] = array(
             'name' => $pluginName,
@@ -267,18 +267,18 @@ class BitbucketManager
     
     private function getComposerPackageDetails($filePath)
     {
-        $this->logOutput( "filePath... " . $filePath . "\n");
+        $this->logOutput("filePath... " . $filePath . "\n");
 
         if (($json = @file_get_contents($filePath . '/composer.json')) === false) {
             $error = error_get_last();
-            $this->logOutput( "Unable to get package slug... " . $error['message']);
+            $this->logOutput("Unable to get package slug... " . $error['message']);
             return false;
         }
         
         // Decode the composer file.
         $json_data = json_decode($json, true);
 
-        $this->logOutput( "Slug Name... " . $json_data['name'] . "\n");
+        $this->logOutput("Slug Name... " . $json_data['name'] . "\n");
 
         $composerData = [
             'slug' => $json_data['name'],
@@ -466,7 +466,7 @@ class BitbucketManager
         $destination = "$pluginWorkingDir/composer.json";
         
         if (!copy($source, $destination)) {
-            $this->logOutput( "failed to copy $source...\n");
+            $this->logOutput("failed to copy $source...\n");
         }
 
         // next we remove the previous plugin folder.
@@ -480,9 +480,9 @@ class BitbucketManager
         if ($res === true) {
             $zip->extractTo("$pluginWorkingDir");
             $zip->close();
-            $this->logOutput( 'extraction successful!');
+            $this->logOutput('extraction successful!');
         } else {
-            $this->logOutput( 'failed to open zip!');
+            $this->logOutput('failed to open zip!');
         }
 
         $source  = "$pluginWorkingDir/composer.json";
@@ -490,7 +490,7 @@ class BitbucketManager
 
         // next we put back the composer.json file.
         if (!copy($source, $destination)) {
-            $this->logOutput( "failed to copy $source...\n");
+            $this->logOutput("failed to copy $source...\n");
         }
 
         // next we copy the .git file back into the plugin folder.
@@ -498,7 +498,7 @@ class BitbucketManager
         $destination =  "$localWorkTree/.git";
         
         if (!copy($source, $destination)) {
-            $this->logOutput( "failed to copy $source...\n");
+            $this->logOutput("failed to copy $source...\n");
         }
 
         // next we remove the temp zip file.
@@ -544,19 +544,21 @@ class BitbucketManager
         $zip = new \ZipArchive;
         $res = $zip->open($path);
         if ($res === true) {
-            for($i = 0; $i < $zip->numFiles; $i++) {
-                $fileinfo = $zip->statIndex($i);
-                // Check if it is a directory
-                if(substr($fileinfo['name'], -1) == '/') {
-                    // Close zip file
+            if($zip->numFiles > 0) {
+                $firstFileName = $zip->getNameIndex(0);
+                $parts = explode('/', $firstFileName);
+                
+                // If the first part is not empty, it's the top-level folder
+                if(!empty($parts[0])) {
                     $zip->close();
-                    // Return the directory name
-                    return trim($fileinfo['name'], '/');
+                    return $parts[0];
                 }
             }
+            $zip->close();
         }
         // Return empty string if no directory found
         return '';
+        
     }
 
     private function get_plugin_version($plugin_path)
