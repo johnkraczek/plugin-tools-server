@@ -563,10 +563,8 @@ class BitbucketManager
 
     private function get_plugin_version($plugin_path)
     {
-        //$pluginName = $this->extractPluginData(file_get_contents($file), "Plugin Name:");
-
         foreach (glob($plugin_path.'/*.php') as $file) {
-            $version = $this->extractPluginData(file_get_contents($file), "Version: ");
+            $version = $this->extractPluginData(file_get_contents($file), "Version:");
             if ($version) {
                 return $version;
             }
@@ -680,7 +678,7 @@ class BitbucketManager
         );
         
         $context = stream_context_create($options);
-    
+        // if the plugin already exists we will get a 400 error. We should do some additional checking to make sure that the plugin doesn't exist before we try to create it.
         $url = "https://api.bitbucket.org/2.0/repositories/$workspace/$slug";
         $response = file_get_contents($url, false, $context);
     
@@ -742,10 +740,15 @@ class BitbucketManager
     
     private function extractPluginData($fileContent, $matchedString)
     {
-        if (preg_match('/\* '.$matchedString.'\s*(.+)/', $fileContent, $matches)) {
+        // Quote the matched string to make sure any special characters in it are treated literally
+        $quotedMatchedString = preg_quote($matchedString, '/');
+        
+        // Look for the matched string and capture everything after it until the end of the line
+        if (preg_match('/' . $quotedMatchedString . '\s*(.+)/', $fileContent, $matches)) {
             return trim($matches[1]);
         }
         return false;
     }
+    
 
 }
