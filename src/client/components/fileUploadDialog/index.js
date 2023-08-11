@@ -19,7 +19,7 @@ function ModalPopup() {
     const [processedInfo, setProcessedInfo] = useState(null); // Added this state variable
     const [vendor, setVendor] = useState("");
 
-    const {refreshPlugins} = usePluginContext();
+    const { refreshPlugins } = usePluginContext();
 
     const handleFileChange = (e) => {
         setFile(e.target.files[0]);
@@ -203,7 +203,7 @@ function ModalPopup() {
                                             <br />
                                             <p> If you are happy with this info then click continue to finish processing the plugin.</p>
                                             <div className="mt-4 mr-2">
-                                            <button
+                                                <button
                                                     type="button"
                                                     className={`inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 ${isProcessing ? 'opacity-50 cursor-not-allowed' : ''}`}
                                                     onClick={handleAdditionalProcessing}
@@ -295,12 +295,12 @@ function ModalPopup() {
     };
 
     return (
-        <div>
-            <div className="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
+        <>
+            <div className="mt-4 w-25 sm:ml-2 sm:mt-0 sm:flex-none">
                 <button
                     onClick={() => setIsOpen(true)}
                     type="button"
-                    className="block rounded-md bg-indigo-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                    className="px-4 block rounded-md bg-indigo-600 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
                 >
                     Add Plugin
                 </button>
@@ -326,7 +326,7 @@ function ModalPopup() {
                     </div>
                 </Dialog>
             </Transition>
-        </div>
+        </>
     );
 }
 

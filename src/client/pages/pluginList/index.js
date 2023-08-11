@@ -3,6 +3,7 @@ import { useTitle } from "../../contexts/titleContext"
 import Box from '../../components/box';
 import PluginTable from '../../components/table/index.js';
 import ModalPopup from '../../components/fileUploadDialog/index.js';
+import ReloadButton from '../../components/reloadButton';
 
 const PluginList = () => {
 
@@ -22,6 +23,7 @@ const PluginList = () => {
                             This is a list of all plugins tracked by YDTB. You can add a new plugin by clicking the button.
                         </p>
                     </div>
+                    <ReloadButton />
                     <ModalPopup />
                 </div>
             </div>
