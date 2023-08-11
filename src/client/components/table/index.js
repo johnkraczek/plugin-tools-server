@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 
 import PluginRow from './PluginRow';
 
@@ -11,10 +11,6 @@ TimeAgo.addDefaultLocale(en)
 function PluginTable() {
 
     const { PluginData } = usePluginContext();
-
-    useEffect(() => {
-        console.log(PluginData)
-    }, [PluginData])
 
     return (
         <div className="shadow ring-1 ring-black ring-opacity-5 sm:rounded-lg mb-10" >

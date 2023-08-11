@@ -22,7 +22,7 @@ const SettingsProvider = ({ children }) => {
                 if (res.status == 200 && res.data) {
                     dispatch({ type: "INITIALIZE", value: res.data })
                 }
-                console.log('get', res);
+                //console.log('get', res);
             })
             .catch(err => {
                 console.log(err)
@@ -38,7 +38,7 @@ const SettingsProvider = ({ children }) => {
             bitbucket_workspace: formData.bitbucket_workspace
          };
 
-        console.log('data to save:', postData)
+        //console.log('data to save:', postData)
 
         axios.post(SettingsFormEndpoint, postData, axiosOptions)
             .then(res => {

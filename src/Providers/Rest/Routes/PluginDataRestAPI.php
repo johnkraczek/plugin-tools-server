@@ -19,6 +19,12 @@ class PluginDataRestAPI implements Provider
                 'callback' => array( $this, 'fetchAllPluginsMeta' ),
                 'permission_callback' => array( new RestPermission, 'getPermissionCallback' )
             ]);
+
+            register_rest_route('pt-server/v1', '/refresh', [
+                'methods' => 'GET',
+                'callback' => array( $this, 'refreshPluginData' ),
+                'permission_callback' => array( new RestPermission, 'getPermissionCallback' )
+            ]);
         });
     }
 
@@ -43,5 +49,23 @@ class PluginDataRestAPI implements Provider
     
         // Return the data as a JSON-encoded string
         return new \WP_REST_Response($formattedPluginData, 200);
+    }
+
+
+    public function refreshPluginData(\WP_REST_Request $request)
+    {
+        $bitbucket = new BitbucketManager(true);
+
+        if (!$bitbucket->initalized){
+            return new \WP_Error(
+                'Settings Error',
+                esc_html__('Bitbucket settings not configured.'),
+                array('status' => 412)
+            );
+        }
+        $packages = $bitbucket->cloneOrFetchRepositories();
+        $bitbucket->generateComposerPackages($packages);
+
+        return $this->fetchAllPluginsMeta($request);
     }
 }

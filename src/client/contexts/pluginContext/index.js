@@ -7,6 +7,7 @@ const axiosOptions = {
     headers: { 'X-WP-Nonce': pts.nonce }
 };
 const PluginDataEndpoint = pts.rest + 'plugins';
+const PluginRefreshEndpoint = pts.rest + 'refresh';
 
 const PluginContext = createContext();
 export const usePluginContext = () => useContext(PluginContext);
@@ -43,13 +44,18 @@ const PluginProvider = ({ children }) => {
 
     const [PluginData, dispatch] = useReducer(pluginsReducer, []);
     const [loaded, setLoaded] = useState(false);
+    const [isProcessing, setIsProcessing] = useState(false);
 
-    const fetchPlugins = () => {
-        axios.get(PluginDataEndpoint, axiosOptions)
+    const fetchPlugins = (endpoint) => {
+        setIsProcessing(true);
+        setLoaded(false);
+        //console.log("fetching data from: " + endpoint);
+        axios.get(endpoint, axiosOptions)
             .then(res => {
                 if (res.status === 200 && res.data) {
                     try {
-                        console.log("the data is: " + res.data)
+                        //console.log('successfully fetched data from endpoint '+ endpoint)
+                        // console.log("the data is: " + res.data)
                         verifyPluginData(res.data);
                         dispatch({ type: 'INITIALIZE_PLUGINS', value: res.data });
                         setLoaded(true);
@@ -61,19 +67,27 @@ const PluginProvider = ({ children }) => {
             .catch(err => {
                 console.log(err)
             })
+            .finally(() => {
+                //console.log("finally")
+                setIsProcessing(false);
+            });
     };
 
     useEffect(() => {
-        fetchPlugins();
+        fetchPlugins(PluginDataEndpoint);
     }, []);
 
     const refreshPlugins = () => {
-        setLoaded(false);
-        fetchPlugins();
+        fetchPlugins(PluginDataEndpoint);
     }
 
+    const reloadData = () => {
+        fetchPlugins(PluginRefreshEndpoint);
+    }
+
+
     return (
-        <PluginContext.Provider value={{ PluginData, dispatch, loaded, refreshPlugins }}>
+        <PluginContext.Provider value={{ PluginData, dispatch, loaded, refreshPlugins, reloadData, isProcessing }}>
             {children}
         </PluginContext.Provider>
     );
