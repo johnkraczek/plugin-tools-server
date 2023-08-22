@@ -59,7 +59,7 @@ class BitbucketManager
     public function cloneOrFetchRepositories()
     {
         $packages = [];
-        $fields = 'size,pagelen,page,values.full_name,values.name,values.slug,values.links.clone,values.links.html';
+        $fields = 'size,pagelen,page,values.full_name,values.name,values.slug,values.links.clone,values.links.html,next';
     
         $context = stream_context_create([
             'http' => [
@@ -80,7 +80,7 @@ class BitbucketManager
             $response = file_get_contents("https://api.bitbucket.org/2.0/repositories/".$this->workspace."?pagelen=100&page=$page&fields=$fields", false, $context);
             $data = json_decode($response, true);
             
-            $this->logOutput(print_r($data, true));
+            //$this->logOutput(print_r($data, true));
 
             $this->logOutput("Found " . $data['size'] . " repositories.\n");
     
@@ -100,7 +100,10 @@ class BitbucketManager
                     copy($localWorkTree . '/.git', $localGitDir.'/.gitBackup');
                 } else {
                     $this->logOutput("Pulling " . $repository['name'] . "...\n");
-                    $process = new Process(['git', 'pull', '--all'], $localWorkTree, ['username' => $this->username, 'password' => $this->password]);
+                    $process = new Process(['git', 'pull', '--all'], $localWorkTree, ['GIT_USERNAME' => $this->username, 'GIT_PASSWORD' => $this->password]);
+                    $process->run();
+                    // $this->logOutput(    $process->getOutput());
+                    // $this->logOutput(    $process->getErrorOutput());
                 }
                 $packages[] = array("path"=>$localWorkTree, "full_name"=>$repository['full_name']);
             }
