@@ -9,7 +9,8 @@ const axiosOptions = {
     headers: { 'X-WP-Nonce': pts.nonce }
 };
 
-const PluginDataEndpoint = pts.rest + 'upload-plugin';
+const PluginUploadEndpoint = pts.rest + 'upload-plugin';
+const PluginCompleteEndpoint = pts.rest + 'complete-upload-plugin';
 
 function ModalPopup() {
     const [isOpen, setIsOpen] = useState(false);
@@ -29,16 +30,16 @@ function ModalPopup() {
         if (!processedInfo) return;
 
         setIsProcessing(true);
-        let putData = { ...processedInfo }
+        let completeData = { ...processedInfo }
 
-        putData.vendor = vendor;
-        putData.composerSlug = vendor + "/" + processedInfo.slug;
+        completeData.vendor = vendor;
+        completeData.composerSlug = vendor + "/" + processedInfo.slug;
 
         // Sending the previously received processedInfo as the data
-        axios.put(PluginDataEndpoint, { data: putData }, axiosOptions)
+        axios.post(PluginCompleteEndpoint, { data: completeData }, axiosOptions)
             .then(res => {
                 if (res.status === 200 && res.data.status === "success") {
-                    console.log('Additional processing successful:', res.data);
+                    //console.log('Additional processing successful:', res.data);
                     setModalStep(3);
                     setVendor("");
                     // You can add more logic here, e.g., update some state or show a notification
@@ -64,10 +65,10 @@ function ModalPopup() {
 
         setIsProcessing(true);
 
-        axios.post(PluginDataEndpoint, formData, axiosOptions)
+        axios.post(PluginUploadEndpoint, formData, axiosOptions)
             .then(res => {
                 if (res.status === 200 && res.data.status === "success") {
-                    console.log('File uploaded and processed:', res.data);
+                    //console.log('File uploaded and processed:', res.data);
 
                     // Store the processed information in local state.
                     setProcessedInfo(res.data.data);

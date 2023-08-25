@@ -52,20 +52,24 @@ const PluginProvider = ({ children }) => {
         //console.log("fetching data from: " + endpoint);
         axios.get(endpoint, axiosOptions)
             .then(res => {
-                if (res.status === 200 && res.data) {
-                    try {
-                        //console.log('successfully fetched data from endpoint '+ endpoint)
-                        // console.log("the data is: " + res.data)
+                if (res.status === 200) {
+                    // try {
+                        // console.log('successfully fetched data from endpoint '+ endpoint)
+                        // console.log("the data is: " )
+                        // console.log(res);
                         verifyPluginData(res.data);
                         dispatch({ type: 'INITIALIZE_PLUGINS', value: res.data });
                         setLoaded(true);
-                    } catch (error) {
-                        console.error(error);
-                    }
+                    // } catch (error) {
+                    //     console.error(error);
+                    // }
+                    setIsProcessing(false);
                 }
             })
             .catch(err => {
+                console.log('there was an error fething the data')
                 console.log(err)
+                setIsProcessing(false);
             })
             .finally(() => {
                 //console.log("finally")
