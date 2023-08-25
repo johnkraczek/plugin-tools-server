@@ -42,9 +42,9 @@ class PluginUpdateAPI implements Provider
         });
 
         add_action('rest_api_init', function () {
-            register_rest_route('pt-server/v1', '/upload-plugin', [
-                'methods' => 'PUT',
-                'callback' => array( $this, 'putInternalPlugin' ),
+            register_rest_route('pt-server/v1', '/complete-upload-plugin', [
+                'methods' => 'POST',
+                'callback' => array( $this, 'completeInternalPlugin' ),
                 'permission_callback' => array( new RestPermission, 'getPermissionCallback' )
             ]);
         });
@@ -266,10 +266,10 @@ class PluginUpdateAPI implements Provider
             ]
         ];
     
-        return rest_ensure_response($response);
+        return new \WP_REST_Response($response, 200);
     }
 
-    public function putInternalPlugin(\WP_REST_Request $request)
+    public function comleteInternalPlugin(\WP_REST_Request $request)
     {
         $data = $request->get_params()['data'];
         
@@ -291,7 +291,7 @@ class PluginUpdateAPI implements Provider
             'status' => 'success',
             'message' => 'Plugin processed successfully.',
         ];
-        return rest_ensure_response($response);
+        return new \WP_REST_Response($response, 200);
     }
     
     private function formatSizeUnits($bytes)
