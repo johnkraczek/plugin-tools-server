@@ -1,6 +1,6 @@
 {
   "name": "@ydtb/plugintoolsserver",
-  "version": "0.0.25",
+  "version": "0.0.26",
   "license": "GPLv2 or later",
   "private": true,
   "description": "Plugin Tools Server allows you to track paid wordpress plugins and themes automatically in a git repository. ",
