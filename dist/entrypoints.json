@@ -1,0 +1,15 @@
+{
+  "client": {
+    "js": [
+      "js/runtime.fbc0e5.js",
+      "js/client.8ea99f.js"
+    ],
+    "css": [
+      "css/client.a0f45e.css"
+    ],
+    "dependencies": [
+      "react",
+      "react-dom"
+    ]
+  }
+}
