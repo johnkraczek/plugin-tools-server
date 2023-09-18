@@ -30,9 +30,8 @@ class BitbucketManager
         $this->username = $settings['bitbucket_username'];
         $this->password = Crypto::Decrypt($settings['bitbucket_password']);
         $this->workspace = $settings['bitbucket_workspace']; // workspace slug from bitbucket
-        $this->targetDir = wp_upload_dir()['basedir']. '/plugin-tools-server';
+        $this->targetDir = wp_upload_dir()['basedir'] . '/plugin-tools-server';
         $this->silent = $silent;
-
     }
 
     public function getUser()
@@ -60,13 +59,13 @@ class BitbucketManager
     {
         $packages = [];
         $fields = 'size,pagelen,page,values.full_name,values.name,values.slug,values.links.clone,values.links.html,next';
-    
+
         $context = stream_context_create([
             'http' => [
                 'header' => 'Authorization: Basic ' . base64_encode($this->username . ':' . $this->password),
             ],
         ]);
-    
+
         $nextPage = true;
         $page = 1;
         $this->setGitConfig();
@@ -74,22 +73,22 @@ class BitbucketManager
         if ($this->workspace == "" || $this->workspace == null) {
             throw new \Exception('Invalid Workspace: ' . $this->workspace);
         }
-    
+
         while ($nextPage) {
             $this->logOutput("Fetching Repositories in " . $this->workspace . "...\n");
-            $response = file_get_contents("https://api.bitbucket.org/2.0/repositories/".$this->workspace."?pagelen=100&page=$page&fields=$fields", false, $context);
+            $response = file_get_contents("https://api.bitbucket.org/2.0/repositories/" . $this->workspace . "?pagelen=100&page=$page&fields=$fields", false, $context);
             $data = json_decode($response, true);
-            
+
             //$this->logOutput(print_r($data, true));
 
             $this->logOutput("Found " . $data['size'] . " repositories.\n");
-    
+
             foreach ($data['values'] as $repository) {
                 $slug = $this->validateSlug($repository['slug']);
                 $localWorkDir = $this->targetDir  . '/' . $slug;
                 $localGitDir = $localWorkDir . "/$slug.git";
                 $localWorkTree = $localWorkDir  . '/' . $slug;
-    
+
                 if (!is_dir($localWorkDir)) {
                     $this->logOutput("Cloning " . $repository['name'] . "...\n");
                     mkdir($localWorkTree, 0700, true);
@@ -97,25 +96,25 @@ class BitbucketManager
                     $process->run();
                     $process = new Process(['git', 'init', '--separate-git-dir', $localGitDir], $localWorkTree);
                     $process->run();
-                    copy($localWorkTree . '/.git', $localGitDir.'/.gitBackup');
+                    copy($localWorkTree . '/.git', $localGitDir . '/.gitBackup');
                 } else {
                     $this->logOutput("Pulling " . $repository['name'] . "...\n");
-                    $process = new Process(['git', 'pull', '--all'], $localWorkTree, ['GIT_USERNAME' => $this->username, 'GIT_PASSWORD' => $this->password]);
-                    $process->run();
-                    // $this->logOutput(    $process->getOutput());
-                    // $this->logOutput(    $process->getErrorOutput());
+                    if (!$this->recentlyPulled( $localWorkDir )){
+                        $process = new Process(['git', 'pull', '--all'], $localWorkTree, ['GIT_USERNAME' => $this->username, 'GIT_PASSWORD' => $this->password]);
+                        $process->run();
+                    }
                 }
-                $packages[] = array("path"=>$localWorkTree, "full_name"=>$repository['full_name']);
+                $packages[] = array("path" => $localWorkTree, "full_name" => $repository['full_name']);
             }
-    
+
             $nextPage = isset($data['next']);
             $page++;
         }
-    
+
         $this->logOutput("Done.\n");
         return $packages;
     }
-    
+
     private function logOutput($message)
     {
         if (!$this->silent) {
@@ -133,43 +132,43 @@ class BitbucketManager
         // clear out the meta data so that if any packages have been removed, they will be removed from the meta data.
         update_option('pts_plugin_list_meta', []);
 
-        foreach($packages as $package) {
+        foreach ($packages as $package) {
             if (!$this->silent) {
                 $this->logOutput("Count: " . $count . " Package: " . $package['full_name'] . "\n");
             }
-    
+
             $plugin = $this->fetchPluginData($package);
             $packageoutput->packages->{$plugin['slug']} = $plugin[$plugin['slug']];
-            $count ++;
+            $count++;
         }
         if (!$this->silent) {
             $this->logOutput("Writing packages.json...\n");
         }
-        file_put_contents($this->targetDir."/packages.json", json_encode($packageoutput));
+        file_put_contents($this->targetDir . "/packages.json", json_encode($packageoutput));
     }
-    
+
     private function fetchPluginData($package)
     {
         $plugin = [];
         $fullName = $package['full_name'];
         $path = $package['path'];
-    
+
         $git = new GitRepository($path);
-    
-        $this->logOutput("Generating... " . $package['full_name'] ."\n");
-    
+
+        $this->logOutput("Generating... " . $package['full_name'] . "\n");
+
         $remotes = $git->branch()->getNames();
         $tags = $git->tag()->getNames();
-    
-        list('slug'=>$composerSlug, 'type'=>$type, 'description'=>$description) = $this->getComposerPackageDetails($path);
-    
+
+        list('slug' => $composerSlug, 'type' => $type, 'description' => $description) = $this->getComposerPackageDetails($path);
+
         if ($composerSlug === false) {
             return false;
         }
-    
+
         $this->generatePluginMetaData($tags, $path, $composerSlug);
-    
-        foreach($tags as $tag) {
+
+        foreach ($tags as $tag) {
             $plugin[$composerSlug][$tag] = [
                 'name' => $composerSlug,
                 'version' => $tag,
@@ -186,13 +185,13 @@ class BitbucketManager
                 'description' => $description
             ];
         }
-    
-        foreach($remotes as $branch) {
-    
+
+        foreach ($remotes as $branch) {
+
             $branchHash = $this->getGitBranchHash($path, $branch);
-    
-            $this->logOutput("Branch: " . $branch . " hash: " . $branchHash ."\n");
-    
+
+            $this->logOutput("Branch: " . $branch . " hash: " . $branchHash . "\n");
+
             $devBranch = 'dev-' . $branch;
             $plugin[$composerSlug][$devBranch] = [
                 'name' => $composerSlug,
@@ -210,12 +209,12 @@ class BitbucketManager
                 'description' => $description
             ];
         }
-    
+
         $plugin['slug'] = $composerSlug;
-    
+
         return $plugin;
     }
-    
+
     private function generatePluginMetaData($tags, $path, $composerSlug)
     {
 
@@ -240,7 +239,7 @@ class BitbucketManager
         if (!$process->isSuccessful()) {
             throw new ProcessFailedException($process);
         }
-    
+
         // Return the output, trimming any whitespace at the end
         $lastPushed = trim($process->getOutput());
 
@@ -267,7 +266,7 @@ class BitbucketManager
         // Save updated data back to the database
         update_option('pts_plugin_list_meta', $existingData);
     }
-    
+
     private function getComposerPackageDetails($filePath)
     {
         $this->logOutput("filePath... " . $filePath . "\n");
@@ -277,7 +276,7 @@ class BitbucketManager
             $this->logOutput("Unable to get package slug... " . $error['message']);
             return false;
         }
-        
+
         // Decode the composer file.
         $json_data = json_decode($json, true);
 
@@ -291,11 +290,11 @@ class BitbucketManager
 
         return $composerData;
     }
-    
+
     public function setGitConfig()
     {
         // this only needs to be set once.
-        if(file_exists("~/.gitconfig")) {
+        if (file_exists("~/.gitconfig")) {
             return;
         }
 
@@ -350,7 +349,7 @@ class BitbucketManager
                 'stream'   => true,  // Stream the response to the temporary file
                 'filename' => $temp_file_path,
             ));
-    
+
             if (is_wp_error($response)) {
                 unlink($temp_file_path);  // Remove the temporary file
                 throw new \Exception("Error fetching plugin from $input: " . $response->get_error_message());
@@ -378,7 +377,7 @@ class BitbucketManager
         }
 
         // we to check if this plugin has previously been downloaded.
-        $pluginWorkingDir = $this->targetDir."/$pluginSlug";
+        $pluginWorkingDir = $this->targetDir . "/$pluginSlug";
 
         $localGitDir = "$pluginWorkingDir/$pluginSlug.git";
         $localWorkTree = "$pluginWorkingDir/$pluginSlug";
@@ -398,14 +397,14 @@ class BitbucketManager
             $composerJsonContent = $this->getComposerJson($temp_file_path, $pluginSlug);
 
             if ($composerJsonContent !== null) {
-                
+
                 $composerData = json_decode($composerJsonContent, true);
 
                 if (isset($composerData['name'])) {
                     // Replace the 'name' property with the new value.
                     $composerData['name'] = $composerSlug;
                 }
-            
+
                 $fileWriteResult = file_put_contents("$localWorkTree/composer.json", json_encode($composerData));
 
                 if ($fileWriteResult === false) {
@@ -445,7 +444,7 @@ class BitbucketManager
             $this->logOutput(print_r($process->getOutput(), true));
             $this->logOutput(print_r($process->getErrorOutput(), true));
             //git push -u origin master
-            
+
             $process = new Process(['git', 'push', '-u', 'origin', 'master'], "$localWorkTree/", ['GIT_USERNAME' => $this->username, 'GIT_PASSWORD' => $this->password]);
             $process->run();
             $this->logOutput("push output");
@@ -460,14 +459,14 @@ class BitbucketManager
             $this->logOutput(print_r($process->getOutput(), true));
             $this->logOutput(print_r($process->getErrorOutput(), true));
             // keep the .git file somewhere else so that we are able to copy it back later.
-            
-            copy($localWorkTree . '/.git', $localGitDir.'/.gitBackup');
+
+            copy($localWorkTree . '/.git', $localGitDir . '/.gitBackup');
         }
-        
+
         // first step is to copy the composer.json file
         $source = "$localWorkTree/composer.json";
         $destination = "$pluginWorkingDir/composer.json";
-        
+
         if (!copy($source, $destination)) {
             $this->logOutput("failed to copy $source...\n");
         }
@@ -499,7 +498,7 @@ class BitbucketManager
         // next we copy the .git file back into the plugin folder.
         $source = "$localGitDir/.gitBackup";
         $destination =  "$localWorkTree/.git";
-        
+
         if (!copy($source, $destination)) {
             $this->logOutput("failed to copy $source...\n");
         }
@@ -518,7 +517,7 @@ class BitbucketManager
             $this->logOutput(print_r($version, true));
             throw new \Exception("Plugin version does not match package version");
         }
-        
+
         // next we add changes in the git repo.
         $process = new Process(['git', 'add', '*'], "$localWorkTree/");
         $process->run();
@@ -547,12 +546,12 @@ class BitbucketManager
         $zip = new \ZipArchive;
         $res = $zip->open($path);
         if ($res === true) {
-            if($zip->numFiles > 0) {
+            if ($zip->numFiles > 0) {
                 $firstFileName = $zip->getNameIndex(0);
                 $parts = explode('/', $firstFileName);
-                
+
                 // If the first part is not empty, it's the top-level folder
-                if(!empty($parts[0])) {
+                if (!empty($parts[0])) {
                     $zip->close();
                     return $parts[0];
                 }
@@ -561,12 +560,11 @@ class BitbucketManager
         }
         // Return empty string if no directory found
         return '';
-        
     }
 
     private function get_plugin_version($plugin_path)
     {
-        foreach (glob($plugin_path.'/*.php') as $file) {
+        foreach (glob($plugin_path . '/*.php') as $file) {
             $version = $this->extractPluginData(file_get_contents($file), "Version:");
             if ($version) {
                 return $version;
@@ -584,15 +582,15 @@ class BitbucketManager
 
         // Split the slug into parts
         $parts = explode('/', $composerSlug);
-        
+
         // If slug is not in 'vendor/package' format, return false
         if (count($parts) < 2) {
             return false;
         }
-        
+
         // Get the package name
         $packageName = $parts[1];
-    
+
         // Compare the package name with the folder name
         return $packageName == $folderName;
     }
@@ -604,13 +602,13 @@ class BitbucketManager
             "description" => "A private repo tracking the $name plugin.",
             "type" => $type
         );
-    
+
         // Convert array to JSON
         $json = json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-    
+
         // Define path
         $file_path = $path . '/composer.json';
-    
+
         // Write data to file
         if (!file_put_contents($file_path, $json)) {
             throw new Exception('Unable to write to file at: ' . $file_path);
@@ -620,11 +618,11 @@ class BitbucketManager
     public function getComposerJson($zipPath, $slug)
     {
         $zip = new \ZipArchive;
-    
+
         // Open the zip file
         if ($zip->open($zipPath) === true) {
             // Loop through each file in the zip
-            for($i = 0; $i < $zip->numFiles; $i++) {
+            for ($i = 0; $i < $zip->numFiles; $i++) {
                 $filename = $zip->getNameIndex($i);
                 // If this file is the composer.json within the slug directory, return its content
                 if ($filename == $slug . '/composer.json') {
@@ -667,7 +665,7 @@ class BitbucketManager
             ],
             'is_private' => true,
         );
-    
+
         $options = array(
             'http' => array(
                 'header'  => [
@@ -679,18 +677,18 @@ class BitbucketManager
                 'content' => json_encode($data),
             ),
         );
-        
+
         $context = stream_context_create($options);
         // if the plugin already exists we will get a 400 error. We should do some additional checking to make sure that the plugin doesn't exist before we try to create it.
         $url = "https://api.bitbucket.org/2.0/repositories/$workspace/$slug";
         $response = file_get_contents($url, false, $context);
-    
+
         if ($response === false) {
             throw new \Exception("Unable to create Bitbucket repository");
         }
-    
+
         $responseData = json_decode($response, true);
-    
+
         if (isset($responseData['links']['clone'])) {
             foreach ($responseData['links']['clone'] as $cloneLink) {
                 if ($cloneLink['name'] === 'https') {
@@ -700,20 +698,19 @@ class BitbucketManager
         }
 
         throw new \Exception("Unable to get clone links from repository response");
-        
     }
-    
+
     private function getPluginName($path)
     {
         // Check if the path is a ZIP file
         if (pathinfo($path, PATHINFO_EXTENSION) == 'zip') {
             $zip = new \ZipArchive;
             $res = $zip->open($path);
-            
+
             if ($res !== true) {
                 throw new \Exception("Cannot open the ZIP file.");
             }
-    
+
             // Go through each file in the ZIP archive
             for ($i = 0; $i < $zip->numFiles; $i++) {
                 $filename = $zip->getNameIndex($i);
@@ -729,29 +726,58 @@ class BitbucketManager
             $zip->close();
         } else {
             // If not a ZIP file, then consider it as a directory and read the PHP files directly
-            foreach (glob($path.'/*.php') as $file) {
+            foreach (glob($path . '/*.php') as $file) {
                 $pluginName = $this->extractPluginData(file_get_contents($file), "Plugin Name: ");
                 if ($pluginName) {
                     return $pluginName;
                 }
             }
         }
-    
+
         // Return false if no plugin name is found
         return false;
     }
-    
+
     private function extractPluginData($fileContent, $matchedString)
     {
         // Quote the matched string to make sure any special characters in it are treated literally
         $quotedMatchedString = preg_quote($matchedString, '/');
-        
+
         // Look for the matched string and capture everything after it until the end of the line
         if (preg_match('/' . $quotedMatchedString . '\s*(.+)/', $fileContent, $matches)) {
             return trim($matches[1]);
         }
         return false;
     }
-    
 
+    private function recentlyPulled($localWorkDir) {
+        $configFilePath = $localWorkDir . '/config.json';
+        
+        // Check if config.json exists
+        if (file_exists($configFilePath)) {
+            $jsonContent = file_get_contents($configFilePath);
+            $configData = json_decode($jsonContent, true);
+            
+            // Check if 'last_pulled' exists and is a timestamp
+            if (isset($configData['last_pulled']) && is_numeric($configData['last_pulled'])) {
+                $lastPulled = $configData['last_pulled'];
+                $currentTime = time();
+                
+                // Check if the last pulled time is within the last 5 minutes (300 seconds)
+                if (($currentTime - $lastPulled) <= 300) {
+                    return true;
+                }
+            }
+        }
+        
+        // If reached here, either the file doesn't exist, 
+        // or 'last_pulled' doesn't exist, or the last pull was more than 5 minutes ago.
+        // Update the last_pulled time in config.json
+        $newConfigData = [
+            'last_pulled' => time()
+        ];
+        file_put_contents($configFilePath, json_encode($newConfigData));
+        
+        return false;
+    }
 }

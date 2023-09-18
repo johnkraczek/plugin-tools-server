@@ -1,77 +1,24 @@
 name: Build and Release
 
 on:
-  pull_request:
-    types: [closed]
-    branches:
-      - master
+  workflow_dispatch:
+    inputs:
+      bumpLevel:
+        required: true
+        default: patch
+        description: 'The level of bump to apply to the version number'
+        type: choice
+        options:
+          - major
+          - minor
+          - patch
 
 permissions:
   contents: write
 
 jobs:
   build:
-    if: github.event.pull_request.merged == true
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          token: ${{ secrets.PLUGINTOOLSSERVERTOKEN }}
-
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.1'
-          tools: composer:v2
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v2
-        with:
-          node-version: '16'
-
-      - name: Bump version and Create a Git Tag
-        id: tag_version
-        uses: mathieudutour/github-tag-action@v6.1
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          default_bump: patch
-          dry_run: true
-
-      - name: Update version in PHP file
-        run: |
-          sed -i 's/\(* Version: *\)[0-9]\+\.[0-9]\+\.[0-9]\+/\1'${{ steps.tag_version.outputs.new_version }}'/' PluginToolsServer.php
-
-      - name: Update version in package.json
-        run: |
-          npm version --allow-same-version --no-git-tag-version ${{ steps.tag_version.outputs.new_version }} 
-
-      - name: Push Bumped version to master
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git remote set-url origin https://x-access-token:${{ secrets.PLUGINTOOLSSERVERTOKEN }}@github.com/${{ github.repository }}
-          git add PluginToolsServer.php package.json
-          git commit -m "Bump version to ${{ steps.tag_version.outputs.new_version }}"
-          git push origin master --force
-
-      # - name: New Branch Builds
-      #   continue-on-error: true
-      #   run: |
-      #     git checkout -B builds
-
-      - name: Install PHP Dependencies
-        run: composer install --prefer-dist --no-progress
-      
-      - name: Install Node Dependencies
-        run: npm ci
-
-      - name: Build
-        run: npm run build
-
-      - name: Do Git Things
-        run: |
-          git add --force dist/* vendor/*
-          git commit -m "Built plugin version ${{ steps.tag_version.outputs.new_version }}"
-          git tag ${{ steps.tag_version.outputs.new_version }}
-          git push origin ${{ steps.tag_version.outputs.new_version }}
+    uses: johnkraczek/BuildAndTagWordpressPlugin/.github/workflows/build_and_tag.yml@main
+    with:
+      bumpLevel: ${{ github.event.inputs.bumpLevel }}
+      root_php_file: 'PluginToolsServer.php'
