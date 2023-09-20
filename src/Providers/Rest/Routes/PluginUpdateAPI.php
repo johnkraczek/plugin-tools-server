@@ -14,6 +14,10 @@ class PluginUpdateAPI implements Provider
 {
     private PluginDownloadJob $downloadJob;
 
+    private $AttemptLimit;
+
+    private $AttemptWindow;
+
     public function register()
     {
         $this->downloadJob = new PluginDownloadJob();
@@ -21,36 +25,36 @@ class PluginUpdateAPI implements Provider
         add_action('rest_api_init', function () {
             register_rest_route('pt-server/v1', '/pk', [
                 'methods' => 'POST',
-                'callback' => array( $this, 'handleProductKey' )
+                'callback' => array($this, 'handleProductKey')
             ]);
         });
-           
+
         add_action('rest_api_init', function () {
             register_rest_route('pt-server/v1', '/update', [
                 'methods' => 'POST',
-                'callback' => array( $this, 'updateSinglePlugin' ),
-                'permission_callback' => array( new RestPermission, 'getPermissionCallback' )
+                'callback' => array($this, 'updateSinglePlugin'),
+                'permission_callback' => array(new RestPermission, 'getPermissionCallback')
             ]);
         });
 
         add_action('rest_api_init', function () {
             register_rest_route('pt-server/v1', '/upload-plugin', [
                 'methods' => 'POST',
-                'callback' => array( $this, 'postInternalPlugin' ),
-                'permission_callback' => array( new RestPermission, 'getPermissionCallback' )
+                'callback' => array($this, 'postInternalPlugin'),
+                'permission_callback' => array(new RestPermission, 'getPermissionCallback')
             ]);
         });
 
         add_action('rest_api_init', function () {
             register_rest_route('pt-server/v1', '/complete-upload-plugin', [
                 'methods' => 'POST',
-                'callback' => array( $this, 'completeInternalPlugin' ),
-                'permission_callback' => array( new RestPermission, 'getPermissionCallback' )
+                'callback' => array($this, 'completeInternalPlugin'),
+                'permission_callback' => array(new RestPermission, 'getPermissionCallback')
             ]);
         });
-        
+
         $this->AttemptLimit = 5;
-        $this->AttemptWindow = 10*60; // 10 minutes
+        $this->AttemptWindow = 10 * 60; // 10 minutes
     }
 
     public function handleProductKey(\WP_REST_Request $request)
@@ -108,7 +112,7 @@ class PluginUpdateAPI implements Provider
     {
         $token = $request->get_header('Authorization');
         $secret_key = get_option('PTS_JWT_SECRET_KEY');
-        
+
         try {
             $decoded = JWT::decode($token, new Key($secret_key, 'HS256'));
             $permission = $decoded->permission;
@@ -125,7 +129,7 @@ class PluginUpdateAPI implements Provider
 
         // we have validated that there are no errors with the token, now we can get the data
         $data = $request->get_json_params();
- 
+
         // Validate and sanitize the URL
         if (!filter_var($data['pluginURL'], FILTER_VALIDATE_URL)) {
             return new \WP_Error('validation_error', 'Invalid URL', array('status' => 400));
@@ -142,7 +146,7 @@ class PluginUpdateAPI implements Provider
             return new \WP_Error('validation_error', 'Invalid plugin slug. Expected format: vendor/plugin', array('status' => 400));
         }
         $pluginSlug = $data['pluginSlug'];
-        
+
         // Validate and sanitize the plugin name
         if (strlen($data['pluginName']) > 30) {
             return new \WP_Error('validation_error', 'Plugin name should be less than 30 characters', array('status' => 400));
@@ -158,12 +162,12 @@ class PluginUpdateAPI implements Provider
         $pluginVersion = $data['pluginVersion'];
 
         $this->downloadJob->data([
-         'plugin_url' => $pluginURL,
-         'plugin_slug' => $pluginSlug,
-         'plugin_name' => $pluginName,
-         'plugin_version' => $pluginVersion
+            'plugin_url' => $pluginURL,
+            'plugin_slug' => $pluginSlug,
+            'plugin_name' => $pluginName,
+            'plugin_version' => $pluginVersion
         ]);
-       
+
         $this->downloadJob->dispatch();
         return new \WP_REST_Response(array(
             'result' => 'success',
@@ -175,22 +179,22 @@ class PluginUpdateAPI implements Provider
     {
         // Ensure there's a file uploaded
         if (empty($_FILES) || !isset($_FILES['file'])) {
-            return new WP_Error('no_file_uploaded', 'No file was uploaded.', array('status' => 400));
+            return new \WP_Error('no_file_uploaded', 'No file was uploaded.', array('status' => 400));
         }
-    
+
         $file = $_FILES['file'];
-    
+
         // Check for the file type
         if ($file['type'] !== 'application/zip') {
-            return new WP_Error('invalid_file_type', 'Only zip files are allowed.', array('status' => 400));
+            return new \WP_Error('invalid_file_type', 'Only zip files are allowed.', array('status' => 400));
         }
-    
+
         $plugin_info = $this->isValidWordPressPlugin($file['tmp_name']);
 
         if ($plugin_info === false) {
             return new \WP_Error('invalid_plugin', 'The uploaded file is not a valid WordPress plugin.', array('status' => 400));
         }
-        
+
         // If validation was successful, $plugin_info is an array with 'slug' and 'name' keys.
         $slug = $plugin_info['slug'];
         $name = $plugin_info['name'];
@@ -206,19 +210,19 @@ class PluginUpdateAPI implements Provider
         $plugin_tools_server_dir = $base_dir . '/plugin-tools-server';
 
         // Check if your custom directory doesn't exist.
-        if (!file_exists($plugin_tools_server_dir."/tmp/")) {
+        if (!file_exists($plugin_tools_server_dir . "/tmp/")) {
             // Try to create the directory. This will also create nested directories as required.
-            wp_mkdir_p($plugin_tools_server_dir."/tmp/");
+            wp_mkdir_p($plugin_tools_server_dir . "/tmp/");
         }
 
         // Define the destination path for the uploaded file.
         $destination_path = $plugin_tools_server_dir . $file['tmp_name'];
 
         move_uploaded_file($file['tmp_name'], $destination_path);
-    
+
         // Calculate file size in a friendly format
         $filesize = $this->formatSizeUnits(filesize($destination_path));
-    
+
         // check if there is a plugin with the same slug
 
         $pluginDir = "$plugin_tools_server_dir/$slug/$slug";
@@ -232,21 +236,21 @@ class PluginUpdateAPI implements Provider
             $currentPlugin = $this->getPluginDetails($pluginDir);
 
             if ($currentPlugin === false) {
-                return new WP_Error('invalid_plugin_directory', 'There was a problem looking up the plugin with that slug.', array('status' => 400));
+                return new \WP_Error('invalid_plugin_directory', 'There was a problem looking up the plugin with that slug.', array('status' => 400));
             }
 
             if (version_compare($uploadVersion, $currentPlugin['version'], '>')) {
                 $verCheck = [
                     "status" => true,
                     "message" => "Upload version is greater than Current Version",
-                    "currentVersion" => $currentPlugin['version'
-                ]] ;
+                    "currentVersion" => $currentPlugin['version']
+                ];
             } else {
                 $verCheck = [
                     "status" => false,
                     "message" => "Upload version is less than or equal to Current Version",
-                    "currentVersion" => $currentPlugin['version'
-                ]] ;
+                    "currentVersion" => $currentPlugin['version']
+                ];
             }
         }
 
@@ -265,17 +269,17 @@ class PluginUpdateAPI implements Provider
                 'versionCheck' => $verCheck
             ]
         ];
-    
+
         return new \WP_REST_Response($response, 200);
     }
 
-    public function comleteInternalPlugin(\WP_REST_Request $request)
+    public function completeInternalPlugin(\WP_REST_Request $request)
     {
         $data = $request->get_params()['data'];
-        
+
         $bitbucket = new BitbucketManager(true);
 
-        if (!$bitbucket->initalized){
+        if (!$bitbucket->initalized) {
             throw new \Exception('Bitbucket Settings not configured.');
         }
 
@@ -293,7 +297,7 @@ class PluginUpdateAPI implements Provider
         ];
         return new \WP_REST_Response($response, 200);
     }
-    
+
     private function formatSizeUnits($bytes)
     {
         if ($bytes >= 1073741824) {
@@ -311,12 +315,12 @@ class PluginUpdateAPI implements Provider
         }
         return $bytes;
     }
-    
+
     private function isValidWordPressPlugin($zipPath)
     {
         // Create a new zip object
         $zip = new \ZipArchive;
-        
+
         // Open the zip file
         if ($zip->open($zipPath) === false) {
             return false;
@@ -340,13 +344,15 @@ class PluginUpdateAPI implements Provider
             if ($path_parts['extension'] == 'php') {
                 // Get the contents of the file
                 $contents = $zip->getFromName($filename);
-    
+
                 // Check if the contents include the plugin name and version
-                if (preg_match('/Plugin Name:\s*(.*)/', $contents, $name_matches) &&
-                    preg_match('/Version:\s*(.*)/', $contents, $version_matches)) {
+                if (
+                    preg_match('/Plugin Name:\s*(.*)/', $contents, $name_matches) &&
+                    preg_match('/Version:\s*(.*)/', $contents, $version_matches)
+                ) {
                     // Close the zip file
                     $zip->close();
-                        
+
                     // Return the slug (folder name), plugin name, and version
                     return [
                         'slug' => $slug,
@@ -356,11 +362,11 @@ class PluginUpdateAPI implements Provider
                 }
             }
         }
-    
+
         // Close the zip file
         $zip->close();
-        
-    
+
+
         // If we reach here, the file is not a valid WordPress plugin
         return false;
     }
@@ -374,22 +380,24 @@ class PluginUpdateAPI implements Provider
         if (substr($folder_path, -1) !== DIRECTORY_SEPARATOR) {
             $folder_path .= DIRECTORY_SEPARATOR;
         }
-    
+
         // Read files in the specified directory
         $files = scandir($folder_path);
-    
+
         // Filter for PHP files in the root directory of the plugin
         $php_files = array_filter($files, function ($file) use ($folder_path) {
             return is_file($folder_path . $file) && pathinfo($file, PATHINFO_EXTENSION) === 'php';
         });
-    
+
         foreach ($php_files as $filename) {
             $contents = file_get_contents($folder_path . $filename);
-    
+
             // Check if the contents include the plugin name and version
-            if (preg_match('/Plugin Name:\s*(.*)/', $contents, $name_matches) &&
-                preg_match('/Version:\s*(.*)/', $contents, $version_matches)) {
-    
+            if (
+                preg_match('/Plugin Name:\s*(.*)/', $contents, $name_matches) &&
+                preg_match('/Version:\s*(.*)/', $contents, $version_matches)
+            ) {
+
                 // Return the slug (folder name), plugin name, and version
                 return [
                     'name' => trim($name_matches[1]),
@@ -397,9 +405,7 @@ class PluginUpdateAPI implements Provider
                 ];
             }
         }
-    
+
         return false;
     }
-    
-
 }
