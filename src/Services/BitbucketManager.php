@@ -44,12 +44,6 @@ class BitbucketManager
         return $this->workspace;
     }
 
-    // ??? is this needed? ???
-    // private function getPassword()
-    // {
-    //     return Crypto::Decrypt($this->password);
-    // }
-
     public function getTargetDir()
     {
         return $this->targetDir;
@@ -98,10 +92,13 @@ class BitbucketManager
                     $process->run();
                     copy($localWorkTree . '/.git', $localGitDir . '/.gitBackup');
                 } else {
-                    $this->logOutput("Pulling " . $repository['name'] . "...\n");
+                    $this->logOutput("Pulling " . $repository['name'] . " ...");
                     if (!$this->recentlyPulled( $localWorkDir )){
+                        $this->logOutput("from the source\n");
                         $process = new Process(['git', 'pull', '--all'], $localWorkTree, ['GIT_USERNAME' => $this->username, 'GIT_PASSWORD' => $this->password]);
                         $process->run();
+                    } else {
+                        $this->logOutput(" Skipping ... \n");
                     }
                 }
                 $packages[] = array("path" => $localWorkTree, "full_name" => $repository['full_name']);
@@ -763,16 +760,13 @@ class BitbucketManager
                 $lastPulled = $configData['last_pulled'];
                 $currentTime = time();
                 
-                // Check if the last pulled time is within the last 5 minutes (300 seconds)
-                if (($currentTime - $lastPulled) <= 300) {
+                $seconds = 900;
+                if (($currentTime - $lastPulled) <= $seconds) {
                     return true;
                 }
             }
         }
         
-        // If reached here, either the file doesn't exist, 
-        // or 'last_pulled' doesn't exist, or the last pull was more than 5 minutes ago.
-        // Update the last_pulled time in config.json
         $newConfigData = [
             'last_pulled' => time()
         ];
